@@ -40,7 +40,7 @@ async fn main() {
     let mut ticks = 0.0;
     // Main loop
     loop {
-        // Handle input
+        // Handle Ending
         if is_key_down(KeyCode::Escape) {
             println!("Terminating Brain...");
             break;
@@ -50,6 +50,7 @@ async fn main() {
             // let fire = (modulo(get_time(),5.0)) as i32 == 0;
             let fire = if !is_key_down(KeyCode::S) {(modulo(get_time(),5.0)) as i32 == 0 } else { false };
             // let fire = get_time() >= 10.0 && get_time() <= 11.0;
+            
             println!("new tick: {}", fire);
             brain.tick(fire);
             let time = if get_time() == 0.0 {0.02} else {get_time()};
@@ -57,15 +58,12 @@ async fn main() {
         }
         // Drawing a frame
         { 
-        // Update the postions
-        brain.update_layout(center);
 
         // Clear the screen
         clear_background(BLACK);
 
-        // Draw neurons and axons
-        brain.draw();
-
+        // Update and draw neurons and axons
+        brain.general_update(center);
         // Draw FPS and other info
         draw_text(
             &format!("TPS: {}, FPS: {}", (ticks/get_time()).round(), get_fps()),

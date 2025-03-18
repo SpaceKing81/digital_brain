@@ -8,7 +8,7 @@ use macroquad::{
 
 const MEMORY_SIZE:usize = 5;
 const ONE_STANDARD_DEV_THRESHOLD:i32 = 14;
-const MAX_HAPPY_VALUE:u32 = 150; // The value that it dies at
+const MAX_HAPPY_VALUE:u32 = 500; // The value that it dies at
 const INACTIVITY_DEATH_TIME:u32 = 10000; // The time before it dies of bordom
 
 
@@ -54,6 +54,13 @@ impl Neuron {
         delta_t:0,
         avg_t:0,
     }
+  }
+  pub fn check_no_more_axion_viability(&self) -> Option<i32> {
+    let roll = rand::gen_range(0,MAX_HAPPY_VALUE/2);
+    if roll + self.happyness < MAX_HAPPY_VALUE/5 {
+      return Some(rand::gen_range(5,10))
+    }
+    None
   }
 }
 // Update
@@ -107,7 +114,6 @@ impl Neuron {
   }
 
 }
-
 // Output stuff
 impl Neuron {
   pub fn ready_to_fire(&mut self) -> bool {
@@ -117,7 +123,7 @@ impl Neuron {
   } // checks if the neuron wants to fire 
   pub fn check_to_kill(&self) -> bool {
     if self.happyness >= MAX_HAPPY_VALUE {return true}
-    if self.delta_t > INACTIVITY_DEATH_TIME { return true}
+    if self.delta_t > INACTIVITY_DEATH_TIME {return true}
     false
   }
 }
@@ -147,6 +153,7 @@ impl Neuron {
   }
 
 }
+
 // Mutate Thresholds
 impl Neuron {
   pub fn update_threshold(&mut self) {
