@@ -7,7 +7,7 @@ use macroquad::{
 // use crate::axion::Axion;
 
 const MEMORY_SIZE:usize = 5;
-const ONE_STANDARD_DEV_THRESHOLD:i32 = 14;
+const ONE_STANDARD_DEV_THRESHOLD:i32 = 30;
 const MAX_HAPPY_VALUE:u32 = 500; // The value that it dies at
 const INACTIVITY_DEATH_TIME:u32 = 10000; // The time before it dies of bordom
 

@@ -8,7 +8,7 @@ use std::u128;
 
 use crate::{
   //
-  Axion, Input, Neuron, Output
+  input, output, Axion, Input, Neuron, Output
   //
 };
 
@@ -164,8 +164,11 @@ impl Brain {
   }
   
   pub fn general_update(&mut self, center:Vec2) {
+
     let neuron_ids: Vec<u32> = self.neurons.keys().cloned().collect();
     let axion_ids: Vec<u128> = self.axions.keys().cloned().collect();
+    let input_ids: Vec<u32> = self.inputs.keys().cloned().collect();
+    let output_ids: Vec<u32> = self.outputs.keys().cloned().collect();
 
     let mut axions_to_remove:Vec<u128> = Vec::new();
     let mut neurons_to_remove:Vec<u32>= Vec::new();
@@ -174,11 +177,13 @@ impl Brain {
     
     
     // Update Inputs - no firing
-    for (i,input) in &self.inputs {
-      // Update input
-
-      // Draw input
-      input.draw();
+    for i in input_ids {
+      if let Some(input) = self.inputs.get_mut(&i){
+        // Update input
+        input.update();
+        // Draw input
+        input.draw();
+      };
     }
     
     // Update Axions
@@ -205,7 +210,7 @@ impl Brain {
       if (neuron_look.output_axions.len() == 0) {
         needs_outputs.push(id1);
       }
-      if (neuron_look.input_axions.len() < 0) {
+      if (neuron_look.input_axions.len() <= 0) {
         needs_inputs.push(id1);
       }
       
@@ -256,21 +261,15 @@ impl Brain {
       self.neurons[&id1].draw();
     }
 
-    
-    
     // Update Outputs
-    for (_id, output) in &self.outputs {
-      // update output
-
-      // Draw the output
-      output.draw();
+    for i in output_ids {
+      if let Some(output) = self.outputs.get_mut(&i){
+        // Update input
+        output.update();
+        // Draw input
+        output.draw();
+      };
     }
-
-
-    // loop for every input, then every axion, then neuron, then output.
-    // going to have the update_layout, combined with the draw fn, along with an update for every single entety 
-    // that needs to be drawn
-
 
   }
   

@@ -27,6 +27,8 @@ impl Output {
     }
   }
 
+
+  pub fn update(&mut self) {}
   pub fn draw(&self) {
     let color = if self.tick < 5 {FIRED} else {WAITING};
     draw_circle(self.position.x, self.position.y, 10.0, color); // Wintery blue

@@ -36,7 +36,7 @@ impl Input {
     self.output_neurons.push(id);
   }
 
-
+  pub fn update(&mut self) {}
   pub fn tick(&mut self) {
     if self.tick >= 5 {self.tick=5;return}
     self.tick += 1;
