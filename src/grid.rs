@@ -3,7 +3,7 @@ pub mod grid {
     use macroquad::math::Vec2;
 
     use crate::neuron::Neuron;
-    const GRID_SIZE: f32 = 50.0;
+    use crate::consts::*;
 
     #[derive(Debug)]
     pub struct GridCell {
@@ -11,7 +11,7 @@ pub mod grid {
         count: usize,
     }
     impl GridCell {
-    pub fn build_spatial_grid(neurons: &HashMap<u32, Neuron>) -> HashMap<(i32, i32), Self> {
+    pub fn build_spatial_grid(neurons: &HashMap<u32, Neuron>) -> HashMap<(i32, i32), GridCell> {
         let mut grid = HashMap::new();
 
         for neuron in neurons.values() {
@@ -35,7 +35,7 @@ pub mod grid {
     pub fn compute_repulsion_from_grid(
         position: Vec2,
         grid_key: (i32, i32),
-        grid: &HashMap<(i32, i32), Self>,
+        grid: &HashMap<(i32, i32), GridCell>,
     ) -> Vec2 {
         let mut force = Vec2::ZERO;
 
@@ -48,10 +48,10 @@ pub mod grid {
                         continue;
                     }
 
-                    let center = cell.total_position / cell.count as f32;
+                    let center:Vec2 = cell.total_position / cell.count as f32;
                     let dir = position - center;
-                    let distance = dir.length().max(1.0); // Avoid divide-by-zero
-                    let repulsion_strength = 100.0 / distance.powi(2); // Tune this constant
+                    let distance = dir.length().max(ELECTRIC_SUFRACE);
+                    let repulsion_strength = COULOMB / (distance * distance);
 
                     force += dir.normalize() * repulsion_strength * cell.count as f32;
                 }
@@ -108,7 +108,7 @@ pub mod update_threads {
             let mut total_force = Vec2::ZERO;
 
             // Center force
-            total_force += center_force_fn(*id, center).unwrap_or(Vec2::ZERO);
+            total_force -= center_force_fn(*id, center).unwrap_or(Vec2::ZERO);
 
             // Electric repulsion
             let grid_key = (
@@ -120,7 +120,7 @@ pub mod update_threads {
             // Spring forces from axions
             for ax_id in &neuron.input_axions {
                 if let Some(axion) = axions_snapshot.get(ax_id) {
-                    total_force += spring_force_fn(*id, axion.id_source).unwrap_or(Vec2::ZERO);
+                    total_force -= spring_force_fn(*id, axion.id_source).unwrap_or(Vec2::ZERO);
 
                     let mut axion_buf = axion_updates.lock().unwrap();
                     axion_buf.push(AxionUpdate {

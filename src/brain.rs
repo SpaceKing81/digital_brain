@@ -244,7 +244,7 @@ impl Brain {
     let pos2 = self.neurons[&id2].position;
     let distance_s = pos1.distance(pos2);
 
-    if distance_s > 0.0 { // Prevent division by zero
+    if distance_s > SPRING_NORMAL { 
       let direction_s = (pos1 - pos2) / distance_s;
       let spring = SPRING * distance_s;
       return Some(spring * direction_s * TIME_STEP);
@@ -254,7 +254,7 @@ impl Brain {
   fn center_force(&self, id1:u32, center:Vec2) -> Option<Vec2> {
     let pos1 = self.neurons[&id1].position;
     let distance_g = pos1.distance(center);
-    if distance_g > GRAVITY_SUFRACE { // Prevent division by zero
+    if distance_g > GRAVITY_SUFRACE { 
       let direction_g = (pos1 - center) / distance_g;
       let gravity = GRAVITY * distance_g;
       return Some(gravity * direction_g * TIME_STEP)
