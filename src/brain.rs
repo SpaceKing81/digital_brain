@@ -56,55 +56,56 @@ impl Brain {
       active_neurons:HashSet::new(),
     }
   }
-  pub fn spin_up_new(&mut self, num_neurons: u32, num_input:u32) {
-    // for _ in 0..num_neurons {
-
-    // }
-    // set up neurons and axions
+  pub fn spin_up_new(&mut self, num_neurons: u32, num_input: u32) {
     // Step 1: Create neurons
-      for _ in 0..num_neurons+10 {
+    for _ in 0..(num_neurons + 10) {
         self.add_neuron();
-      }
-      self.num_of_neurons += num_neurons;
-      // Step 2: Connect neurons with axons
-      for _ in 0..(num_neurons * 2) {
-        // Randomly select source and sink neurons
-        let source_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len() as usize)).unwrap();
-        let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len() as usize)).unwrap();
+    }
 
-        // Ensure source and sink are different
+    // Cache neuron IDs into a Vec for efficient random access
+    let neuron_ids: Vec<u32> = self.neurons.keys().copied().collect();
+    let len = neuron_ids.len();
+
+    // Step 2: Connect neurons with axons
+    for _ in 0..(num_neurons * 2) {
+        let source_id = neuron_ids[rand::gen_range(0, len)];
+        let sink_id = neuron_ids[rand::gen_range(0, len)];
         if source_id != sink_id {
             self.add_axion(source_id, sink_id);
             self.num_of_axions += 1;
         }
-      }
-        let mut bad_connections = Vec::new();
-        for i in 0..num_neurons {
-          if let Some(neuron) = self.neurons.get(&i) {
-            if neuron.output_axions.is_empty() {bad_connections.push(i);}
-          }
-        }
-        for i in bad_connections {
-          self.no_more_outputs(i);
-        }
-  
+    }
 
-    // set up input neurons
+    // Identify and mark neurons without outputs
+    for id in &neuron_ids[..num_neurons as usize] {
+        if let Some(neuron) = self.neurons.get(id) {
+            if neuron.output_axions.is_empty() {
+                self.no_more_outputs(*id);
+            }
+        }
+    }
+
+    // Step 3: Set up input neurons
     self.num_of_inputs = num_input;
     for id in 0..num_input {
-      let mut input = Input::new(id);
-      // connect in neurons
-      for _ in 0..rand::gen_range(1,std::cmp::max(self.num_of_neurons,2)) {
-        let i = rand::gen_range(0,self.num_of_neurons);
-        if self.neurons.contains_key(&i) && !input.output_neurons.contains(&i) {
-          input.output_neurons.push(i);
-        }
-      }
+        let mut input = Input::new(id);
 
-      self.inputs.insert(id, input);
+        let connect_count = rand::gen_range(1, std::cmp::max(self.num_of_neurons, 2));
+        let mut seen = std::collections::HashSet::with_capacity(connect_count as usize);
+
+        while seen.len() < connect_count as usize {
+            let i = neuron_ids[rand::gen_range(0, len)];
+            if seen.insert(i) && self.neurons.contains_key(&i) {
+                input.output_neurons.push(i);
+            }
+        }
+
+        self.inputs.insert(id, input);
     }
-  self.temp_for_output();
-  }
+
+    // TEMP--TB DELEATED
+    self.temp_for_output();
+}
   pub fn tick(&mut self, input:bool) {
     // one tick passes
     self.clock += 1;
@@ -118,6 +119,7 @@ impl Brain {
     let active_neurons: Vec<u32> = self.active_neurons.drain().collect();
     let mut axions_to_remove = Vec::new();
     let mut neurons_to_remove= Vec::new();
+
     println!("{} neruons to fire this tick", active_neurons.len());
     for neuron_id in active_neurons {
       if let Some(neuron) = self.neurons.get_mut(&neuron_id) {
