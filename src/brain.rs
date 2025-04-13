@@ -1,4 +1,6 @@
 use std::collections::{HashMap, HashSet};
+use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
 use macroquad::{
   // color::*, 
   math::Vec2, rand, shapes::*
@@ -8,9 +10,11 @@ use std::u128;
 
 use crate::{
   //
-  input, output, Axion, Input, Neuron, Output
+  Axion, Input, Neuron, Output, grid::GridCell,
   //
 };
+
+const GRID_SIZE: f32 = 50.0;
 
 const GRAVITY: f32 = 0.01;
 const GRAVITY_SUFRACE: f32 = 150.0;
@@ -165,114 +169,56 @@ impl Brain {
 
   }
   
-  pub fn general_update(&mut self, center:Vec2) {
-
-    let neuron_ids: Vec<u32> = self.neurons.keys().cloned().collect();
-    let axion_ids: Vec<u128> = self.axions.keys().cloned().collect();
-    let input_ids: Vec<u32> = self.inputs.keys().cloned().collect();
-    let output_ids: Vec<u32> = self.outputs.keys().cloned().collect();
-
-    let mut axions_to_remove:Vec<u128> = Vec::new();
-    let mut neurons_to_remove:Vec<u32>= Vec::new();
-    let mut needs_inputs:Vec<u32>= Vec::new();
-    let mut needs_outputs:Vec<u32>= Vec::new();
-    
-    
-    // Update Inputs - no firing
-    for i in input_ids {
-      if let Some(input) = self.inputs.get_mut(&i){
-        // Update input
+  pub fn general_update(&mut self, center: Vec2) {
+    // Update inputs and axions
+    for input in self.inputs.values_mut() {
         input.update();
-        // Draw input
         input.draw();
-      };
-    }
-    
-    // Update Axions
-    for id in axion_ids {
-      let axion = &self.axions[&id];
-      // Check if it should be dead, add to dead if it should
-      if axion.strength == 0 {
-        axions_to_remove.push(id);
-        continue;
-      }
-
-      // Draw Axion
-      self.draw_axion(axion);
     }
 
-    // Update Neurons - no firing
-    for &id1 in &neuron_ids {
-      let neuron_look = &self.neurons[&id1];
-      
-      // Check if it should be dead
-      if neuron_look.check_to_kill() { neurons_to_remove.push(id1); continue; }
-      
-      // Check if it has any inputs or outputs
-      if (neuron_look.output_axions.len() == 0) {
-        needs_outputs.push(id1);
-      }
-      if (neuron_look.input_axions.len() <= 0) {
-        needs_inputs.push(id1);
-      }
-      
-      // Total force value
-      let mut delta = Vec2::ZERO;
-
-      // Gets all the neurons connected to this one
-      let mut connected_neurons:HashSet<u32> = HashSet::new();
-      for i in &neuron_look.input_axions {
-        if let Some(axion) = self.axions.get_mut(i) {
-          axion.update_happyness(neuron_look.happyness);
-          connected_neurons.insert(axion.id_source);
+    for (&id, axion) in self.axions.iter() {
+        if axion.strength == 0 {
+            // handle axion removal later
         }
-      }
-      for i in &neuron_look.output_axions {
-        if let Some(axion) = self.axions.get(i) {
-          connected_neurons.insert(axion.id_sink);
-        }
-      }
-
-      // Add force to the middle
-      if let Some(g) = self.center_force(id1,center) {
-        delta -= g
-      }
-
-      // For interactions between neurons
-      for &id2 in &neuron_ids {
-        // Adds the Spring interaction between specific neurons
-        if connected_neurons.contains(&id2) {
-          if let Some(s) = self.spring_force(id1,id2) {
-            delta += s;
-          }
-        }
-
-        // Add Electric repulsion to every other neuron
-        if let Some(e) = self.electric_force(id1,id2) {
-          delta += e;
-        }
-      }
-
-      // Update position
-        self.neurons.entry(id1).and_modify(|p| p.position += delta);
-  
-      // General Update
-      self.neurons.entry(id1).and_modify(|p| p.update(self.clock));
-
-      // Draw Neuron
-      self.neurons[&id1].draw();
+        self.draw_axion(axion);
     }
 
-    // Update Outputs
-    for i in output_ids {
-      if let Some(output) = self.outputs.get_mut(&i){
-        // Update input
+    // Step 1: build grid
+    let grid = GridCell::build_spatial_grid(&self.neurons);
+
+    // Step 2: do parallel update
+    let (neuron_updates, axion_updates) = parallel_neuron_step(
+        &self.neurons,
+        &self.axions,
+        &grid,
+        center,
+        |id, c| self.center_force(id, c),
+        |a, b| self.spring_force(a, b),
+    );
+
+    // Step 3: apply changes serially
+    for n_up in neuron_updates {
+        if let Some(neuron) = self.neurons.get_mut(&n_up.id) {
+            neuron.position = n_up.new_position;
+            neuron.update(self.clock);
+        }
+    }
+
+    for a_up in axion_updates {
+        if let Some(axion) = self.axions.get_mut(&a_up.id) {
+            axion.update_happyness(a_up.new_happyness);
+        }
+    }
+
+    // Step 4: draw neurons and outputs
+    for neuron in self.neurons.values() {
+        neuron.draw();
+    }
+
+    for output in self.outputs.values_mut() {
         output.update();
-        // Draw input
         output.draw();
-      };
     }
-
   }
   
   
@@ -489,7 +435,81 @@ impl Brain {
       }
     }
   }
+
 }
+
+#[derive(Debug)]
+struct NeuronUpdate {
+  id: u32,
+  new_position: Vec2,
+}
+#[derive(Debug)]
+struct AxionUpdate {
+  id: u128,
+  new_happyness: u32,
+}
+
+
+
+  fn parallel_neuron_step(
+      neurons: &HashMap<u32, Neuron>,
+      axions: &HashMap<u128, Axion>,
+      grid: &HashMap<(i32, i32), GridCell>,
+      center: Vec2,
+      center_force_fn: impl Fn(u32, Vec2) -> Option<Vec2> + Sync,
+      spring_force_fn: impl Fn(u32, u32) -> Option<Vec2> + Sync,
+  ) -> (Vec<NeuronUpdate>, Vec<AxionUpdate>) {
+      let neuron_updates = Arc::new(Mutex::new(vec![]));
+      let axion_updates = Arc::new(Mutex::new(vec![]));
+  
+      let neurons_snapshot: Vec<(u32, Neuron)> = neurons.iter().map(|(&id, n)| (id, n.clone())).collect();
+      let axions_snapshot = axions.clone();
+  
+      neurons_snapshot.par_iter().for_each(|(id, neuron)| {
+          let mut total_force = Vec2::ZERO;
+  
+          // Center force
+          total_force += center_force_fn(*id, center).unwrap_or(Vec2::ZERO);
+  
+          // Electric repulsion
+          let grid_key = (
+              (neuron.position.x / GRID_SIZE).floor() as i32,
+              (neuron.position.y / GRID_SIZE).floor() as i32,
+          );
+          total_force += GridCell::compute_repulsion_from_grid(neuron.position, grid_key, grid);
+  
+          // Spring forces from axions
+          for ax_id in &neuron.input_axions {
+              if let Some(axion) = axions_snapshot.get(ax_id) {
+                  total_force += spring_force_fn(*id, axion.id_source).unwrap_or(Vec2::ZERO);
+  
+                  let mut axion_buf = axion_updates.lock().unwrap();
+                  axion_buf.push(AxionUpdate {
+                      id: *ax_id,
+                      new_happyness: neuron.happyness,
+                  });
+              }
+          }
+  
+          for ax_id in &neuron.output_axions {
+              if let Some(axion) = axions_snapshot.get(ax_id) {
+                  total_force += spring_force_fn(*id, axion.id_sink).unwrap_or(Vec2::ZERO);
+              }
+          }
+  
+          let mut neuron_buf = neuron_updates.lock().unwrap();
+          neuron_buf.push(NeuronUpdate {
+              id: *id,
+              new_position: neuron.position + total_force,
+          });
+      });
+  
+      (
+          Arc::try_unwrap(neuron_updates).unwrap().into_inner().unwrap(),
+          Arc::try_unwrap(axion_updates).unwrap().into_inner().unwrap(),
+      )
+  }
+
 // need a list for all the neurons
 // need a list for all the axions
 
