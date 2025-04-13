@@ -8,7 +8,7 @@ pub mod grid {
     #[derive(Debug)]
     pub struct GridCell {
         total_position: Vec2,
-        count: usize,
+        count: f32,
     }
     impl GridCell {
     pub fn build_spatial_grid(neurons: &HashMap<u32, Neuron>) -> HashMap<(i32, i32), GridCell> {
@@ -23,11 +23,11 @@ pub mod grid {
 
             let cell = grid.entry(key).or_insert(GridCell {
                 total_position: Vec2::ZERO,
-                count: 0,
+                count: 0.0,
             });
 
             cell.total_position += pos;
-            cell.count += 1;
+            cell.count += 1.0;
         }
 
         grid
@@ -39,21 +39,21 @@ pub mod grid {
     ) -> Vec2 {
         let mut force = Vec2::ZERO;
 
-        for dx in -1..=1 {
-            for dy in -1..=1 {
+        for dx in -2..=2 {
+            for dy in -2..=2 {
                 let neighbor_key = (grid_key.0 + dx, grid_key.1 + dy);
 
                 if let Some(cell) = grid.get(&neighbor_key) {
-                    if cell.count == 0 {
+                    if cell.count.floor() == 0.0 {
                         continue;
                     }
 
-                    let center:Vec2 = cell.total_position / cell.count as f32;
+                    let center:Vec2 = cell.total_position / cell.count;
                     let dir = position - center;
                     let distance = dir.length().max(ELECTRIC_SUFRACE);
-                    let repulsion_strength = COULOMB / (distance * distance);
+                    let repulsion_strength = COULOMB / distance.powi(2);
 
-                    force += dir.normalize() * repulsion_strength * cell.count as f32;
+                    force += (dir.normalize() * repulsion_strength) * cell.count;
                 }
             }
         }

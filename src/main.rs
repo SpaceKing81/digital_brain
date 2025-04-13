@@ -35,13 +35,13 @@ async fn main() {
     // Initialize the brain
     println!("Starting simulation...");
     let mut crash = 0;
+    let mut ticks = 0.0;
+    let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
     loop {
     
     let mut brain = Brain::new();
     brain.spin_up_new(STARTING_NEURONS,STARTING_INPUTS);
-    let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
     println!("Brain initialized. Entering continuous operations...");
-    let mut ticks = 0.0;
     // Main loop
     loop {
         // Handle Ending
@@ -53,7 +53,7 @@ async fn main() {
         // Update the brain
         loop {
             // let fire = (modulo(get_time(),5.0)) as i32 == 0;
-            let fire = if !is_key_down(KeyCode::S) {(modulo(get_time(),5.0)) as i32 == 0 } else { false };
+            let fire = if (!is_key_down(KeyCode::S) && (modulo(get_time(),5.0)) as i32 == 0) || is_key_down(KeyCode::F) { true } else { false };
             // let fire = get_time() >= 10.0 && get_time() <= 11.0;
 
             println!("new tick: {}", fire);
