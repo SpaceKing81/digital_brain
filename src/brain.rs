@@ -1,6 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use rayon::prelude::*;
-use std::sync::{Arc, Mutex};
+// use rayon::prelude::*;
 use macroquad::{
   // color::*, 
   math::Vec2, rand, shapes::*
@@ -10,7 +9,7 @@ use std::u128;
 
 use crate::{
   //
-  Axion, Input, Neuron, Output, grid::GridCell,
+  Axion, Input, Neuron, Output, grid::{grid::*, update_threads::*},
   //
 };
 
@@ -438,77 +437,6 @@ impl Brain {
 
 }
 
-#[derive(Debug)]
-struct NeuronUpdate {
-  id: u32,
-  new_position: Vec2,
-}
-#[derive(Debug)]
-struct AxionUpdate {
-  id: u128,
-  new_happyness: u32,
-}
-
-
-
-  fn parallel_neuron_step(
-      neurons: &HashMap<u32, Neuron>,
-      axions: &HashMap<u128, Axion>,
-      grid: &HashMap<(i32, i32), GridCell>,
-      center: Vec2,
-      center_force_fn: impl Fn(u32, Vec2) -> Option<Vec2> + Sync,
-      spring_force_fn: impl Fn(u32, u32) -> Option<Vec2> + Sync,
-  ) -> (Vec<NeuronUpdate>, Vec<AxionUpdate>) {
-      let neuron_updates = Arc::new(Mutex::new(vec![]));
-      let axion_updates = Arc::new(Mutex::new(vec![]));
-  
-      let neurons_snapshot: Vec<(u32, Neuron)> = neurons.iter().map(|(&id, n)| (id, n.clone())).collect();
-      let axions_snapshot = axions.clone();
-  
-      neurons_snapshot.par_iter().for_each(|(id, neuron)| {
-          let mut total_force = Vec2::ZERO;
-  
-          // Center force
-          total_force += center_force_fn(*id, center).unwrap_or(Vec2::ZERO);
-  
-          // Electric repulsion
-          let grid_key = (
-              (neuron.position.x / GRID_SIZE).floor() as i32,
-              (neuron.position.y / GRID_SIZE).floor() as i32,
-          );
-          total_force += GridCell::compute_repulsion_from_grid(neuron.position, grid_key, grid);
-  
-          // Spring forces from axions
-          for ax_id in &neuron.input_axions {
-              if let Some(axion) = axions_snapshot.get(ax_id) {
-                  total_force += spring_force_fn(*id, axion.id_source).unwrap_or(Vec2::ZERO);
-  
-                  let mut axion_buf = axion_updates.lock().unwrap();
-                  axion_buf.push(AxionUpdate {
-                      id: *ax_id,
-                      new_happyness: neuron.happyness,
-                  });
-              }
-          }
-  
-          for ax_id in &neuron.output_axions {
-              if let Some(axion) = axions_snapshot.get(ax_id) {
-                  total_force += spring_force_fn(*id, axion.id_sink).unwrap_or(Vec2::ZERO);
-              }
-          }
-  
-          let mut neuron_buf = neuron_updates.lock().unwrap();
-          neuron_buf.push(NeuronUpdate {
-              id: *id,
-              new_position: neuron.position + total_force,
-          });
-      });
-  
-      (
-          Arc::try_unwrap(neuron_updates).unwrap().into_inner().unwrap(),
-          Arc::try_unwrap(axion_updates).unwrap().into_inner().unwrap(),
-      )
-  }
 
 // need a list for all the neurons
 // need a list for all the axions

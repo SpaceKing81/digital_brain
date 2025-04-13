@@ -64,7 +64,7 @@ async fn main() {
         clear_background(BLACK);
 
         // Update and draw neurons and axons
-        // brain.general_update(center);
+        brain.general_update(center);
         // Draw FPS and other info
         draw_text(
             &format!("TPS: {}, FPS: {}", (ticks/get_time()).round(), get_fps()),

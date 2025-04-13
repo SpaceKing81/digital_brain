@@ -1,63 +1,152 @@
-use std::collections::HashMap;
-use macroquad::math::Vec2;
+pub mod grid {
+    use std::collections::HashMap;
+    use macroquad::math::Vec2;
 
-use crate::neuron::Neuron;
-const GRID_SIZE: f32 = 50.0;
+    use crate::neuron::Neuron;
+    const GRID_SIZE: f32 = 50.0;
 
-#[derive(Debug)]
-pub struct GridCell {
-    total_position: Vec2,
-    count: usize,
-}
-impl GridCell {
-  pub fn build_spatial_grid(neurons: &HashMap<u32, Neuron>) -> HashMap<(i32, i32), Self> {
-      let mut grid = HashMap::new();
+    #[derive(Debug)]
+    pub struct GridCell {
+        total_position: Vec2,
+        count: usize,
+    }
+    impl GridCell {
+    pub fn build_spatial_grid(neurons: &HashMap<u32, Neuron>) -> HashMap<(i32, i32), Self> {
+        let mut grid = HashMap::new();
 
-      for neuron in neurons.values() {
-          let pos = neuron.position;
-          let key = (
-              (pos.x / GRID_SIZE).floor() as i32,
-              (pos.y / GRID_SIZE).floor() as i32,
-          );
+        for neuron in neurons.values() {
+            let pos = neuron.position;
+            let key = (
+                (pos.x / GRID_SIZE).floor() as i32,
+                (pos.y / GRID_SIZE).floor() as i32,
+            );
 
-          let cell = grid.entry(key).or_insert(GridCell {
-              total_position: Vec2::ZERO,
-              count: 0,
-          });
+            let cell = grid.entry(key).or_insert(GridCell {
+                total_position: Vec2::ZERO,
+                count: 0,
+            });
 
-          cell.total_position += pos;
-          cell.count += 1;
-      }
+            cell.total_position += pos;
+            cell.count += 1;
+        }
 
-      grid
-  }
-  pub fn compute_repulsion_from_grid(
-    position: Vec2,
-    grid_key: (i32, i32),
-    grid: &HashMap<(i32, i32), Self>,
-) -> Vec2 {
-    let mut force = Vec2::ZERO;
+        grid
+    }
+    pub fn compute_repulsion_from_grid(
+        position: Vec2,
+        grid_key: (i32, i32),
+        grid: &HashMap<(i32, i32), Self>,
+    ) -> Vec2 {
+        let mut force = Vec2::ZERO;
 
-    for dx in -1..=1 {
-        for dy in -1..=1 {
-            let neighbor_key = (grid_key.0 + dx, grid_key.1 + dy);
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                let neighbor_key = (grid_key.0 + dx, grid_key.1 + dy);
 
-            if let Some(cell) = grid.get(&neighbor_key) {
-                if cell.count == 0 {
-                    continue;
+                if let Some(cell) = grid.get(&neighbor_key) {
+                    if cell.count == 0 {
+                        continue;
+                    }
+
+                    let center = cell.total_position / cell.count as f32;
+                    let dir = position - center;
+                    let distance = dir.length().max(1.0); // Avoid divide-by-zero
+                    let repulsion_strength = 100.0 / distance.powi(2); // Tune this constant
+
+                    force += dir.normalize() * repulsion_strength * cell.count as f32;
                 }
-
-                let center = cell.total_position / cell.count as f32;
-                let dir = position - center;
-                let distance = dir.length().max(1.0); // Avoid divide-by-zero
-                let repulsion_strength = 100.0 / distance.powi(2); // Tune this constant
-
-                force += dir.normalize() * repulsion_strength * cell.count as f32;
             }
         }
+
+        force
     }
 
-    force
+}
 }
 
+pub mod update_threads {
+
+    use std::collections::HashMap;
+    use macroquad::math::Vec2;
+    use std::sync::{Arc, Mutex};
+    use rayon::prelude::*;
+    use crate::Neuron;
+    use crate::Axion;
+    use crate::grid::grid::GridCell;
+
+
+    const GRID_SIZE: f32 = 50.0;
+
+
+    #[derive(Debug)]
+    pub struct NeuronUpdate {
+    pub id: u32,
+    pub new_position: Vec2,
+    }
+    #[derive(Debug)]
+    pub struct AxionUpdate {
+    pub id: u128,
+    pub new_happyness: u32,
+    }
+
+
+
+    pub fn parallel_neuron_step(
+        neurons: &HashMap<u32, Neuron>,
+        axions: &HashMap<u128, Axion>,
+        grid: &HashMap<(i32, i32), GridCell>,
+        center: Vec2,
+        center_force_fn: impl Fn(u32, Vec2) -> Option<Vec2> + Sync,
+        spring_force_fn: impl Fn(u32, u32) -> Option<Vec2> + Sync,
+    ) -> (Vec<NeuronUpdate>, Vec<AxionUpdate>) {
+        let neuron_updates = Arc::new(Mutex::new(vec![]));
+        let axion_updates = Arc::new(Mutex::new(vec![]));
+
+        let neurons_snapshot: Vec<(u32, Neuron)> = neurons.iter().map(|(&id, n)| (id, n.clone())).collect();
+        let axions_snapshot = axions;
+
+        neurons_snapshot.par_iter().for_each(|(id, neuron)| {
+            let mut total_force = Vec2::ZERO;
+
+            // Center force
+            total_force += center_force_fn(*id, center).unwrap_or(Vec2::ZERO);
+
+            // Electric repulsion
+            let grid_key = (
+                (neuron.position.x / GRID_SIZE).floor() as i32,
+                (neuron.position.y / GRID_SIZE).floor() as i32,
+            );
+            total_force += GridCell::compute_repulsion_from_grid(neuron.position, grid_key, grid);
+
+            // Spring forces from axions
+            for ax_id in &neuron.input_axions {
+                if let Some(axion) = axions_snapshot.get(ax_id) {
+                    total_force += spring_force_fn(*id, axion.id_source).unwrap_or(Vec2::ZERO);
+
+                    let mut axion_buf = axion_updates.lock().unwrap();
+                    axion_buf.push(AxionUpdate {
+                        id: *ax_id,
+                        new_happyness: neuron.happyness,
+                    });
+                }
+            }
+
+            for ax_id in &neuron.output_axions {
+                if let Some(axion) = axions_snapshot.get(ax_id) {
+                    total_force += spring_force_fn(*id, axion.id_sink).unwrap_or(Vec2::ZERO);
+                }
+            }
+
+            let mut neuron_buf = neuron_updates.lock().unwrap();
+            neuron_buf.push(NeuronUpdate {
+                id: *id,
+                new_position: neuron.position + total_force,
+            });
+        });
+
+        (
+            Arc::try_unwrap(neuron_updates).unwrap().into_inner().unwrap(),
+            Arc::try_unwrap(axion_updates).unwrap().into_inner().unwrap(),
+        )
+    }
 }
