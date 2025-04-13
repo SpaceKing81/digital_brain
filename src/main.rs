@@ -6,12 +6,14 @@ mod brain;
 mod input;
 mod output;
 mod grid;
+mod consts;
 
 use neuron::Neuron;
 use axion::Axion;
 use brain::Brain;
 use input::Input;
 use output::Output;
+use consts::*;
 /// Calculate Modulus operations
 fn modulo<T>(a: T, b: T) -> T where T: std::ops::Rem<Output = T> + std::ops::Add<Output = T> + Copy, {((a % b) + b) % b}
 fn window_conf() -> Conf {
@@ -23,9 +25,7 @@ fn window_conf() -> Conf {
     }
 }
 
-const STARTING_NEURONS:u32 = 200;
-const STARTING_INPUTS:u32 = 10;
-const IDEAL_TPS:f64 = 60.0;
+
 
 
 
@@ -34,6 +34,9 @@ async fn main() {
     
     // Initialize the brain
     println!("Starting simulation...");
+    let mut crash = 0;
+    loop {
+    
     let mut brain = Brain::new();
     brain.spin_up_new(STARTING_NEURONS,STARTING_INPUTS);
     let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
@@ -44,6 +47,7 @@ async fn main() {
         // Handle Ending
         if is_key_down(KeyCode::Escape) {
             println!("Terminating Brain...");
+            crash = 4;
             break;
         }
         // Update the brain
@@ -67,8 +71,8 @@ async fn main() {
         brain.general_update(center);
         // Draw FPS and other info
         draw_text(
-            &format!("TPS: {}, FPS: {}", (ticks/get_time()).round(), get_fps()),
-            screen_width() - 200.,
+            &format!("Node: {}, Edge: {}, TPS: {}, FPS: {}", brain.neurons.len(), brain.axions.len(),(ticks/get_time()).round(), get_fps()),
+            screen_width() - 400.,
             20.,
             20.,
             WHITE,
@@ -79,6 +83,9 @@ async fn main() {
         // Render the frame
         next_frame().await;
     }
+    crash += 1;
+    if crash == 5 {break;}
+}
 }
 
 

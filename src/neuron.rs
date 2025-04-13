@@ -4,12 +4,9 @@ use macroquad::{
   window::{screen_width,screen_height},
 };
 
-// use crate::axion::Axion;
+use crate::consts::*;
 
-const MEMORY_SIZE:usize = 5;
-const ONE_STANDARD_DEV_THRESHOLD:i32 = 30;
-const MAX_HAPPY_VALUE:u32 = 500; // The value that it dies at
-const INACTIVITY_DEATH_TIME:u32 = 10000; // The time before it dies of bordom
+
 
 
 #[derive(Clone)]
@@ -132,7 +129,7 @@ impl Neuron {
   // either specify how many lost seconds, or complete replacement if none
   fn forget(&mut self, ticks:Option<usize>) {
     let sum:i32 = self.inputs.iter().sum();
-    if ticks == Some(0) {panic!("tried to forget memory and no time passed from last iteration. FORGET FN IN NEURON IMPL")}
+    if ticks == Some(0) {return;}
     match ticks {
       None => {
         // get the current sum value

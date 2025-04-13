@@ -1,0 +1,19 @@
+//Simulation
+pub const STARTING_NEURONS:u32 = 500;
+pub const STARTING_INPUTS:u32 = 10;
+pub const IDEAL_TPS:f64 = 60.0;
+pub const GRID_SIZE: f32 = 10.0;
+
+// Physics
+pub const GRAVITY: f32 = 0.01;
+pub const GRAVITY_SUFRACE: f32 = 150.0;
+pub const ELECTRIC_SUFRACE: f32 = 11.0;
+pub const COULOMB: f32 = 10000.0;  
+pub const SPRING:f32 = 0.01;
+pub const TIME_STEP: f32 = 0.05;
+
+// Neurons
+pub const MEMORY_SIZE:usize = 5;
+pub const ONE_STANDARD_DEV_THRESHOLD:i32 = 30;
+pub const MAX_HAPPY_VALUE:u32 = 500; // The value that it dies at
+pub const INACTIVITY_DEATH_TIME:u32 = 10000; // The time before it dies of bordom

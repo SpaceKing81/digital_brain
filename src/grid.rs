@@ -73,9 +73,7 @@ pub mod update_threads {
     use crate::Neuron;
     use crate::Axion;
     use crate::grid::grid::GridCell;
-
-
-    const GRID_SIZE: f32 = 50.0;
+    use crate::consts::*;
 
 
     #[derive(Debug)]
@@ -99,6 +97,7 @@ pub mod update_threads {
         center_force_fn: impl Fn(u32, Vec2) -> Option<Vec2> + Sync,
         spring_force_fn: impl Fn(u32, u32) -> Option<Vec2> + Sync,
     ) -> (Vec<NeuronUpdate>, Vec<AxionUpdate>) {
+
         let neuron_updates = Arc::new(Mutex::new(vec![]));
         let axion_updates = Arc::new(Mutex::new(vec![]));
 

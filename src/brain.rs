@@ -9,18 +9,9 @@ use std::u128;
 
 use crate::{
   //
-  Axion, Input, Neuron, Output, grid::{grid::*, update_threads::*},
+  Axion, Input, Neuron, Output, grid::{grid::*, update_threads::*},consts::*,
   //
 };
-
-const GRID_SIZE: f32 = 50.0;
-
-const GRAVITY: f32 = 0.01;
-const GRAVITY_SUFRACE: f32 = 150.0;
-const ELECTRIC_SUFRACE: f32 = 11.0;
-const COULOMB: f32 = 10000.0;  
-const SPRING:f32 = 0.01;
-const TIME_STEP: f32 = 0.05;
 
 
 pub struct Brain {
@@ -119,12 +110,14 @@ impl Brain {
       }
     }
 
-    let active_neurons: Vec<u32> = self.active_neurons.drain().collect();
+    let active_neurons_to_iter: Vec<u32> = self.active_neurons.drain().collect();
+    let active_neurons: HashSet<u32> = active_neurons_to_iter.iter().copied().collect();
+    
     let mut axions_to_remove = Vec::new();
     let mut neurons_to_remove= Vec::new();
 
     println!("{} neruons to fire this tick", active_neurons.len());
-    for neuron_id in active_neurons {
+    for neuron_id in active_neurons_to_iter {
       if let Some(neuron) = self.neurons.get_mut(&neuron_id) {
         // update the input neuron happyness
         let input_axions = neuron.input_axions.clone();
@@ -151,9 +144,12 @@ impl Brain {
               if strength != 0 {
                 // update all the input neuron strenght memories
                 if let Some(input_neuron) = self.neurons.get_mut(&input_id) {
-                input_neuron.inputs.push(strength);
-                // add them to the next active neuron cycle
-                self.active_neurons.insert(input_id);
+                  input_neuron.inputs.push(strength);
+                // add them to the next active neuron cycle if its not a repeat
+                  if !active_neurons.contains(&input_id) {
+                    self.active_neurons.insert(input_id);
+                  }
+                
                 }
               } else {axions_to_remove.push(axion_id);}
             }
@@ -161,14 +157,17 @@ impl Brain {
         }    
       }
     }
-          // remove all inactive neurons
+    // remove all inactive neurons
     for axion_id in axions_to_remove {self.remove_axion(axion_id);}
     for neuron_id in neurons_to_remove {self.no_more_outputs(neuron_id);}
-    println!("Num of totalneurons: {}", self.neurons.len());
+    println!("Num of total neurons: {}", self.neurons.len());
 
   }
   
   pub fn general_update(&mut self, center: Vec2) {
+    let mut neurons_to_remove: Vec<u32> = Vec::new();
+    let mut axions_to_remove = Vec::new();
+  
     // Update inputs and axions
     for input in self.inputs.values_mut() {
         input.update();
@@ -177,7 +176,7 @@ impl Brain {
 
     for (&id, axion) in self.axions.iter() {
         if axion.strength == 0 {
-            // handle axion removal later
+          axions_to_remove.push(id);
         }
         self.draw_axion(axion);
     }
@@ -186,7 +185,10 @@ impl Brain {
     let grid = GridCell::build_spatial_grid(&self.neurons);
 
     // Step 2: do parallel update
-    let (neuron_updates, axion_updates) = parallel_neuron_step(
+    let (
+      neuron_updates, 
+      axion_updates
+      ) = parallel_neuron_step(
         &self.neurons,
         &self.axions,
         &grid,
@@ -198,8 +200,12 @@ impl Brain {
     // Step 3: apply changes serially
     for n_up in neuron_updates {
         if let Some(neuron) = self.neurons.get_mut(&n_up.id) {
-            neuron.position = n_up.new_position;
-            neuron.update(self.clock);
+          if neuron.check_to_kill() {
+            neurons_to_remove.push(n_up.id);
+            return;
+          }
+          neuron.position = n_up.new_position;
+          neuron.update(self.clock);
         }
     }
 
