@@ -26,9 +26,6 @@ fn window_conf() -> Conf {
 }
 
 
-
-
-
 #[macroquad::main(window_conf)]
 async fn main() {
     
