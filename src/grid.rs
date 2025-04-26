@@ -1,6 +1,9 @@
 pub mod grid {
     use std::collections::HashMap;
     use macroquad::math::Vec2;
+    
+    use dashmap::DashMap;
+    use rayon::prelude::*;
 
     use crate::neuron::Neuron;
     use crate::consts::*;
@@ -11,27 +14,32 @@ pub mod grid {
         count: f32,
     }
     impl GridCell {
-    pub fn build_spatial_grid(neurons: &HashMap<u32, Neuron>) -> HashMap<(i32, i32), GridCell> {
-        let mut grid = HashMap::new();
-
-        for neuron in neurons.values() {
-            let pos = neuron.position;
-            let key = (
-                (pos.x / GRID_SIZE).floor() as i32,
-                (pos.y / GRID_SIZE).floor() as i32,
-            );
-
-            let cell = grid.entry(key).or_insert(GridCell {
-                total_position: Vec2::ZERO,
-                count: 0.0,
+        pub fn build_spatial_grid(neurons: &HashMap<u32, Neuron>) -> HashMap<(i32,i32), GridCell> {
+            // Concurrently accumulate into a DashMap
+            let grid = DashMap::new();
+        
+            neurons.par_iter().for_each(|(_, neuron)| {
+                let pos = neuron.position;
+                let key = (
+                    (pos.x / GRID_SIZE).floor() as i32,
+                    (pos.y / GRID_SIZE).floor() as i32,
+                );
+        
+                // DashMap lets you do this without Mutex around the whole map
+                grid.entry(key)
+                    .and_modify(|cell| {
+                        cell.total_position += pos;
+                        cell.count += 1.0;
+                    })
+                    .or_insert_with(|| GridCell {
+                        total_position: pos,
+                        count: 1.0,
+                    });
             });
-
-            cell.total_position += pos;
-            cell.count += 1.0;
+        
+            // Convert back to a regular HashMap
+            grid.into_iter().collect()
         }
-
-        grid
-    }
     pub fn compute_repulsion_from_grid(
         position: Vec2,
         grid_key: (i32, i32),

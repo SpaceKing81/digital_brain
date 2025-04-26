@@ -12,6 +12,7 @@ pub struct Output {
   // pub id:u32, // name, basiclly
   pub position: Vec2, // Position on the screen
   pub tick: u32, // how long since firing, max at 5
+  last_tick:u128, // The last called tick
   base_threshold:i32, // threshold to fire, both pos and neg values
   
   // This space will hold the 'plug in' for where the output will be
@@ -22,20 +23,41 @@ pub struct Output {
 }
 
 impl Output {
-  fn new(id:u32) -> Self {
+  pub fn new(id:u32) -> Self {
     Self {
       // id,
       position:Vec2::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
       tick:0,
+      last_tick:0,
       input_axions:Vec::new(),
       base_threshold:OUTPUT_THRESHOLD,
       inputs:Vec::new(),
       input_memory:Vec::new(),
     }
   }
-  pub fn update(&self) {}
+  pub fn update(&mut self, time:u128) {
+    // Update threshold values
+    // self.update_threshold();
+    // self.math();
 
-  
+    // Update the memory as fit
+    if self.last_tick + 5 <= time {
+      // Voids memory and replaces it with the current update scheme
+      self.forget(None);
+    } else {
+      // Updates memory as accurate to the times
+      self.forget(Some((time-self.last_tick) as usize));
+      // NOTE: DIFFERENT THEN NEURON BECAUSE NEURON UPDATES TIME FIRST, NOT LAST. DO NOT
+      // LOOK AT THIS AND FIX IT BECAUSE THEY ARE SUPOSE TO BE LIKE THIS, THOUGHT WAS PUT IN
+      // ALREADY. STUPID.
+    }
+    // Clock update, updates action as needed
+    self.last_tick = time;
+  }
+  pub fn fired(&mut self) {
+    self.tick == 0;
+    self.forget(None);
+  }
 
   pub fn draw(&self) {
     let color = if self.tick < MEMORY_SIZE as u32 {FIRED} else {WAITING};

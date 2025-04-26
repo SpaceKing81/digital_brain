@@ -221,7 +221,7 @@ impl Brain {
     }
 
     for output in self.outputs.values_mut() {
-        output.update();
+        output.update(self.clock);
         output.draw();
     }
   }
