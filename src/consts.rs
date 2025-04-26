@@ -14,7 +14,12 @@ pub const SPRING_NORMAL:f32 = 11.0;
 pub const TIME_STEP: f32 = 0.05;
 
 // Neurons
-pub const MEMORY_SIZE:usize = 5;
+pub const MEMORY_SIZE:usize = 5; // Also Cooldown time
 pub const ONE_STANDARD_DEV_THRESHOLD:i32 = 30;
 pub const MAX_HAPPY_VALUE:u32 = 500; // The value that it dies at
 pub const INACTIVITY_DEATH_TIME:u32 = 10000; // The time before it dies of bordom
+pub const MAX_THRESHOLD: u32 = 70;
+pub const MIN_THRESHOLD: u32 = 30;
+
+// Outputs
+pub const OUTPUT_THRESHOLD: i32 = 70;

@@ -8,7 +8,7 @@ use crate::consts::*;
 
 
 
-
+/// Single neuron
 #[derive(Clone)]
 pub struct Neuron {
   // id:u32, // name, basiclly
@@ -28,10 +28,11 @@ pub struct Neuron {
   pub delta_t:u32, // how long since last fire
   avg_t:u32, // average time since last firing
   
-} // Single neuron
+} 
 
 // General
 impl Neuron {
+  /// Makes a new neuron
   // pub fn new(id:u32) -> Self {
   pub fn new() -> Self {
     Neuron {
@@ -52,6 +53,8 @@ impl Neuron {
         avg_t:0,
     }
   }
+  /// Rolls a save check to see if it should die or gets another chance at life.
+  /// Only relies on happyness value, but only really used if it doesnt have any outputs or inputs left.
   pub fn check_no_more_axion_viability(&self) -> Option<i32> {
     let roll = rand::gen_range(0,MAX_HAPPY_VALUE/2);
     if roll + self.happyness < MAX_HAPPY_VALUE/5 {
@@ -62,28 +65,14 @@ impl Neuron {
 }
 // Update
 impl Neuron {
-  fn tick(&mut self, time:u128) {
-    self.delta_t = (time - self.tick_last_fired) as u32;
-  } 
-  fn math(&mut self) {
-    let t = self.delta_t as i32;
-    let w = self.avg_t as i32;
-    let delta = (w - t).abs();
-    let weight = (delta/ONE_STANDARD_DEV_THRESHOLD).abs() as u32;
-    
-    // alters the reliablity by the distence from average
-    self.happyness += weight;
-    if weight == 0 {self.happyness = self.happyness.saturating_sub(5);}
-    if weight <= 2 {self.happyness = self.happyness.saturating_sub(2)}
-    self.avg_t = (self.avg_t + self.avg_t + self.delta_t) / 3;
-  }
+  /// Honestly useless, just sets the tick to 0
   pub fn fired(&mut self) {
     self.delta_t = 0;
   }
   
-  // does active housekeeping stuff, memory management, time updating
+  /// Housekeeping stuff, memory management, time updating, basic universal update.
+  /// Updates everything that needs to be refreshed whenever it becomes an active neuron.
   pub fn update(&mut self, time:u128) {
-    // Updates everything that needs to be refreshed whenever it becomes an active neuron
     // Clock update, updates action as needed
     let old_time = self.delta_t;
     self.tick(time);
@@ -101,10 +90,27 @@ impl Neuron {
     }
   }
   
+  fn tick(&mut self, time:u128) {
+    self.delta_t = (time - self.tick_last_fired) as u32;
+  } 
+  fn math(&mut self) {
+    let t = self.delta_t as i32;
+    let w = self.avg_t as i32;
+    let delta = (w - t).abs();
+    let weight = (delta/ONE_STANDARD_DEV_THRESHOLD).abs() as u32;
+    
+    // alters the reliablity by the distence from average
+    self.happyness += weight;
+    if weight == 0 {self.happyness = self.happyness.saturating_sub(5);}
+    if weight <= 2 {self.happyness = self.happyness.saturating_sub(2)}
+    self.avg_t = (self.avg_t + self.avg_t + self.delta_t) / 3;
+  }
+  
 }
 
 // Graphics
 impl Neuron {
+  /// Draws the Neuron where ever it is, gives it a color based on its firing status
   pub fn draw(&self) {
     let color = if self.delta_t == 0 {RED} else if self.delta_t < 5 {YELLOW} else {GRAY};
     draw_circle(self.position.x, self.position.y, 10.0, color);
@@ -113,11 +119,13 @@ impl Neuron {
 }
 // Output stuff
 impl Neuron {
-  pub fn ready_to_fire(&mut self) -> bool {
+  /// Checks if the neuron wants to fire 
+  pub fn ready_to_fire(&self) -> bool {
     if self.delta_t <= 5 {return false}
     let potential:i32 = self.input_memory.iter().sum();
     potential.abs() as u32 >= self.threshold
-  } // checks if the neuron wants to fire 
+  } 
+  /// Checks if the neuron should be killed
   pub fn check_to_kill(&self) -> bool {
     if self.happyness >= MAX_HAPPY_VALUE {return true}
     if self.delta_t > INACTIVITY_DEATH_TIME {return true}
@@ -126,7 +134,7 @@ impl Neuron {
 }
 // Input
 impl Neuron {
-  // either specify how many lost seconds, or complete replacement if none
+  /// Either specify how many lost seconds, or complete replacement if none for memory
   fn forget(&mut self, ticks:Option<usize>) {
     let sum:i32 = self.inputs.iter().sum();
     if ticks == Some(0) {return;}
@@ -153,6 +161,7 @@ impl Neuron {
 
 // Mutate Thresholds
 impl Neuron {
+  /// Updates the threshold based on frequency and happyness, along with factoring in a cooldown period
   pub fn update_threshold(&mut self) {
     if self.ready_to_fire() {
       let potential:i32 = self.input_memory.iter().sum();
@@ -203,7 +212,7 @@ impl Neuron {
     let w = u / ONE_STANDARD_DEV_THRESHOLD;
     let w = w.abs() as u32;
     self.base_threshold = self.base_threshold.saturating_sub(w);
-    if self.base_threshold < 30 { self.base_threshold = 30; }
+    if self.base_threshold < MIN_THRESHOLD { self.base_threshold = MIN_THRESHOLD; }
     self.post_fire_threshold();
   }
   fn raise_base_threshold(&mut self) {
@@ -211,7 +220,7 @@ impl Neuron {
     let w = u / ONE_STANDARD_DEV_THRESHOLD;
     let w = w.abs() as u32;
     self.base_threshold += w;
-    if self.base_threshold > 70 { self.base_threshold = 70; }
+    if self.base_threshold > MAX_THRESHOLD { self.base_threshold = MAX_THRESHOLD; }
     self.post_fire_threshold();
   }
   

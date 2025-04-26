@@ -68,8 +68,8 @@ async fn main() {
         brain.general_update(center);
         // Draw FPS and other info
         draw_text(
-            &format!("Node: {}, Edge: {}, TPS: {}, FPS: {}", brain.neurons.len(), brain.axions.len(),(ticks/get_time()).round(), get_fps()),
-            screen_width() - 400.,
+            &format!("Node: {}, Edge: {}, TPS: {}, Crash Count {}", brain.neurons.len(), brain.axions.len(),(ticks/get_time()).round(), crash),
+            20.,
             20.,
             20.,
             WHITE,
