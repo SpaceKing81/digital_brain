@@ -27,7 +27,7 @@ pub mod grid {
         
                 // DashMap lets you do this without Mutex around the whole map
                 grid.entry(key)
-                    .and_modify(|cell| {
+                    .and_modify(|cell: &mut GridCell| {
                         cell.total_position += pos;
                         cell.count += 1.0;
                     })
@@ -97,63 +97,72 @@ pub mod update_threads {
 
 
 
-    pub fn parallel_neuron_step(
+    pub fn parallel_neuron_step<F, G>(
         neurons: &HashMap<u32, Neuron>,
         axions: &HashMap<u128, Axion>,
         grid: &HashMap<(i32, i32), GridCell>,
         center: Vec2,
-        center_force_fn: impl Fn(u32, Vec2) -> Option<Vec2> + Sync,
-        spring_force_fn: impl Fn(u32, u32) -> Option<Vec2> + Sync,
-    ) -> (Vec<NeuronUpdate>, Vec<AxionUpdate>) {
+        center_force_fn: F,
+        spring_force_fn: G,
+    ) -> (Vec<NeuronUpdate>, Vec<AxionUpdate>)
+    where
+        F: Fn(u32, Vec2) -> Option<Vec2> + Sync + Send,
+        G: Fn(u32, u32) -> Option<Vec2> + Sync + Send,
+        {
 
-        let neuron_updates = Arc::new(Mutex::new(vec![]));
-        let axion_updates = Arc::new(Mutex::new(vec![]));
+            
+            let neurons_snapshot: Vec<(u32, Neuron)> = neurons.iter().map(|(&id, n)| (id, n.clone())).collect();
+            let axions_snapshot = axions;
+            // 1) Parallel-map each neuron → (its NeuronUpdate, Vec<AxionUpdate>)
+            let all_updates: Vec<(NeuronUpdate, Vec<AxionUpdate>)> =
+                neurons_snapshot
+                .into_par_iter()
+                .map(|(id, neuron)| {
+                    let mut total_force = Vec2::ZERO;
+                    // center force
+                    total_force -= center_force_fn(id, center).unwrap_or_default();
+                    // repulsion
+                    let key = (
+                        (neuron.position.x / GRID_SIZE).floor() as i32,
+                        (neuron.position.y / GRID_SIZE).floor() as i32,
+                    );
+                    total_force += GridCell::compute_repulsion_from_grid(
+                        neuron.position, key, grid
+                    );
 
-        let neurons_snapshot: Vec<(u32, Neuron)> = neurons.iter().map(|(&id, n)| (id, n.clone())).collect();
-        let axions_snapshot = axions;
+                    // collect axion updates locally
+                    let mut local_axions = Vec::new();
+                    for ax_id in &neuron.input_axions {
+                        if let Some(ax) = axions_snapshot.get(ax_id) {
+                            total_force -= spring_force_fn(id, ax.id_source).unwrap_or_default();
+                            local_axions.push(AxionUpdate {
+                                id: *ax_id,
+                                new_happyness: neuron.happyness,
+                            });
+                        }
+                    }
+                    for ax_id in &neuron.output_axions {
+                        if let Some(ax) = axions_snapshot.get(ax_id) {
+                            total_force -= spring_force_fn(id, ax.id_sink).unwrap_or_default();
+                        }
+                    }
 
-        neurons_snapshot.par_iter().for_each(|(id, neuron)| {
-            let mut total_force = Vec2::ZERO;
+                    let neuron_update = NeuronUpdate {
+                        id,
+                        new_position: neuron.position + total_force,
+                    };
+                    (neuron_update, local_axions)
+                })
+                .collect();
 
-            // Center force
-            total_force -= center_force_fn(*id, center).unwrap_or(Vec2::ZERO);
+        // 2) split into two Vecs
+        let (neuron_updates, axion_lists): (Vec<NeuronUpdate>, Vec<Vec<AxionUpdate>>) =
+        all_updates.into_iter().unzip();
 
-            // Electric repulsion
-            let grid_key = (
-                (neuron.position.x / GRID_SIZE).floor() as i32,
-                (neuron.position.y / GRID_SIZE).floor() as i32,
-            );
-            total_force += GridCell::compute_repulsion_from_grid(neuron.position, grid_key, grid);
+        // 3) flatten the Vec<Vec<AxionUpdate>> into Vec<AxionUpdate>
+        let axion_updates: Vec<AxionUpdate> =
+            axion_lists.into_iter().flatten().collect();
 
-            // Spring forces from axions
-            for ax_id in &neuron.input_axions {
-                if let Some(axion) = axions_snapshot.get(ax_id) {
-                    total_force -= spring_force_fn(*id, axion.id_source).unwrap_or(Vec2::ZERO);
-
-                    let mut axion_buf = axion_updates.lock().unwrap();
-                    axion_buf.push(AxionUpdate {
-                        id: *ax_id,
-                        new_happyness: neuron.happyness,
-                    });
-                }
-            }
-
-            for ax_id in &neuron.output_axions {
-                if let Some(axion) = axions_snapshot.get(ax_id) {
-                    total_force += spring_force_fn(*id, axion.id_sink).unwrap_or(Vec2::ZERO);
-                }
-            }
-
-            let mut neuron_buf = neuron_updates.lock().unwrap();
-            neuron_buf.push(NeuronUpdate {
-                id: *id,
-                new_position: neuron.position + total_force,
-            });
-        });
-
-        (
-            Arc::try_unwrap(neuron_updates).unwrap().into_inner().unwrap(),
-            Arc::try_unwrap(axion_updates).unwrap().into_inner().unwrap(),
-        )
+        (neuron_updates, axion_updates)
     }
 }

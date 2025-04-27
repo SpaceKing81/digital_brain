@@ -11,7 +11,7 @@ pub const ELECTRIC_SUFRACE: f32 = 10.0;
 pub const COULOMB: f32 = 10.0;  
 pub const SPRING:f32 = 0.01;
 pub const SPRING_NORMAL:f32 = 11.0;
-pub const TIME_STEP: f32 = 0.05;
+pub const TIME_STEP: f32 = 0.00005;
 
 // Neurons
 pub const MEMORY_SIZE:usize = 5; // Also Cooldown time

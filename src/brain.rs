@@ -79,7 +79,7 @@ impl Brain {
         }
     }
 
-    // Step 3: Set up input neurons
+    // Step 3: Set up inputs
     self.num_of_inputs = num_input;
     for id in 0..num_input {
         let mut input = Input::new(id);
@@ -97,8 +97,26 @@ impl Brain {
         self.inputs.insert(id, input);
     }
 
-    // TEMP--TB DELEATED
-    self.temp_for_output();
+    // Step 4: Set up outputs
+    self.num_of_inputs = num_input;
+    for id in 0..num_input {
+        let mut input = Input::new(id);
+
+        let connect_count = rand::gen_range(1, std::cmp::max(self.num_of_neurons, 2));
+        let mut seen = std::collections::HashSet::with_capacity(connect_count as usize);
+
+        while seen.len() < connect_count as usize {
+            let i = neuron_ids[rand::gen_range(0, len)];
+            if seen.insert(i) && self.neurons.contains_key(&i) {
+                input.output_neurons.push(i);
+            }
+        }
+
+        self.inputs.insert(id, input);
+    }
+
+
+    
 }
   pub fn tick(&mut self, input:bool) {
     // one tick passes
