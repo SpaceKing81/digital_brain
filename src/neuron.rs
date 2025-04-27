@@ -57,7 +57,7 @@ impl Neuron {
   }
   /// Rolls a save check to see if it should die or gets another chance at life, and if so how many.
   /// Only relies on happyness value, but only really used if it doesnt have any outputs or inputs left.
-  pub fn check_no_more_axion_viability(&self) -> Option<i32> {
+  pub fn roll_save_check(&self) -> Option<i32> {
     let roll = rand::gen_range(0,MAX_HAPPY_VALUE/2);
     if roll + self.happyness < MAX_HAPPY_VALUE/5 {
       return Some(rand::gen_range(10,20))

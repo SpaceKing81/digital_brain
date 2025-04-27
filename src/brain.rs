@@ -9,7 +9,7 @@ use std::u128;
 
 use crate::{
   //
-  Axion, Neuron, grid::{grid::*, update_threads::*},consts::*,
+  axion, consts::*, grid::{grid::*, update_threads::*}, Axion, Neuron
   //
 };
 
@@ -19,6 +19,8 @@ pub struct Brain {
 
   pub neurons: HashMap<u32, Neuron>,
   pub axions: HashMap<u128,Axion>,
+  pub output_ids: HashSet<u32>,
+  pub input_ids: Vec<u128>,
 
   num_of_neurons: u32,
   num_of_axions: u128,
@@ -33,6 +35,8 @@ impl Brain {
 
       neurons: HashMap::new(),
       axions: HashMap::new(),
+      output_ids: HashSet::new(),
+      input_ids: Vec::new(),
 
       num_of_neurons:0,
       num_of_axions:0,
@@ -46,8 +50,10 @@ impl Brain {
     for _ in 0..(num_neurons + 10) {
       self.add_neuron();
     }
-    let mut output_ids: Vec<u32> = Vec::new();
+
     // Step 2: Add outputs
+    let mut output_ids: Vec<u32> = Vec::new();
+
     for _ in 0..num_output {
       output_ids.push(self.add_output());
     }
@@ -80,15 +86,15 @@ impl Brain {
     }
 
     // Step 3: Add + Configure Inputs
+    let mut input_ids = Vec::new();
+    while self.input_ids.len() < num_input as usize {
+      let sink_id = neuron_ids[rand::gen_range(0, len)];
+      if !output_ids.contains(&sink_id) {
+        input_ids.push(self.add_input(sink_id));
+      }
+    }
     
-    // Return [inputs id, outputs id]
-    
-
-    (Vec::new(),Vec::new())
-    
-
-
-    
+    (input_ids, output_ids)
   }
   pub fn tick(&mut self, input:bool) {
     // one tick passes
@@ -373,6 +379,7 @@ impl Brain {
     self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
     self.neurons.insert(id, Neuron::new(true));
+    self.output_ids.insert(id);
     id
   }
   
@@ -403,6 +410,7 @@ impl Brain {
       sink_neuron.input_axions.push(id);
     }
 
+    self.input_ids.push(id);
     id
   }
 

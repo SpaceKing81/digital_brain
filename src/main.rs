@@ -3,8 +3,8 @@ use macroquad::prelude::*;
 mod neuron;
 mod axion;
 mod brain;
-mod input;
-mod output;
+// mod input;
+// mod output;
 mod grid;
 mod consts;
 
