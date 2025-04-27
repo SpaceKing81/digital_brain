@@ -9,7 +9,7 @@ use std::u128;
 
 use crate::{
   //
-  axion, consts::*, grid::{grid::*, update_threads::*}, Axion, Neuron
+  axion::Axion, neuron::Neuron, consts::*, grid::{grid::*, update_threads::*}
   //
 };
 
@@ -29,7 +29,7 @@ pub struct Brain {
 }
 
 impl Brain {
-  pub fn new() -> Brain {
+  fn new() -> Self {
     Brain {
       clock:0,
 
@@ -45,21 +45,24 @@ impl Brain {
       active_neurons:HashSet::new(),
     }
   }
-  pub fn spin_up_new(&mut self, num_neurons: u32, num_input: u128, num_output: u32) -> (Vec<u128>, Vec<u32>) {
+  pub fn spin_up_new(num_neurons: u32, num_input: u128, num_output: u32) -> (Self, Vec<u128>, Vec<u32>) {
+    // Step 0: Create Brain
+    let mut brain = Self::new();
+
     // Step 1: Create neurons
     for _ in 0..(num_neurons + 10) {
-      self.add_neuron();
+      brain.add_neuron();
     }
 
     // Step 2: Add outputs
     let mut output_ids: Vec<u32> = Vec::new();
 
     for _ in 0..num_output {
-      output_ids.push(self.add_output());
+      output_ids.push(brain.add_output());
     }
 
     // Cache neuron IDs into a Vec for efficient random access
-    let neuron_ids: Vec<u32> = self.neurons.keys().copied().collect();
+    let neuron_ids: Vec<u32> = brain.neurons.keys().copied().collect();
     let len = neuron_ids.len();
 
     // Step 2: Connect neurons with axions
@@ -68,33 +71,32 @@ impl Brain {
       let sink_id = neuron_ids[rand::gen_range(0, len)];
       
       if output_ids.contains(&source_id) && !output_ids.contains(&sink_id) {
-        self.add_axion(sink_id,source_id);
-        self.num_of_axions += 1;
+        brain.add_axion(sink_id,source_id);
+        brain.num_of_axions += 1;
       } else if source_id != sink_id {
-        self.add_axion(source_id, sink_id);
-        self.num_of_axions += 1;
+        brain.add_axion(source_id, sink_id);
+        brain.num_of_axions += 1;
       }
     }
 
     // Identify and mark neurons without outputs
     for id in &neuron_ids[..num_neurons as usize] {
-      if let Some(neuron) = self.neurons.get(id) {
+      if let Some(neuron) = brain.neurons.get(id) {
         if neuron.output_axions.is_empty() && !neuron.is_output {
-          self.no_more_outputs(*id);
+          brain.no_more_outputs(*id);
         }
       }
     }
 
     // Step 3: Add + Configure Inputs
     let mut input_ids = Vec::new();
-    while self.input_ids.len() < num_input as usize {
+    while brain.input_ids.len() < num_input as usize {
       let sink_id = neuron_ids[rand::gen_range(0, len)];
       if !output_ids.contains(&sink_id) {
-        input_ids.push(self.add_input(sink_id));
+        input_ids.push(brain.add_input(sink_id));
       }
     }
-    
-    (input_ids, output_ids)
+    (brain, input_ids, output_ids)
   }
   pub fn tick(&mut self, input:bool) {
     // one tick passes
