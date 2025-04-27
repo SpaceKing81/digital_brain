@@ -3,8 +3,8 @@ use macroquad::{
   color::*, math::Vec2, rand, shapes::*,
   window::{screen_width,screen_height},
 };
-
 use crate::consts::*;
+const OUTPUT_COLOR:Color = Color::new(0.0, 0.5, 1.0, 1.0);
 
 
 
@@ -15,9 +15,10 @@ pub struct Neuron {
   pub position: Vec2, // Position on the screen
   base_threshold:u32,
   threshold:u32, // threshold to fire
-  
   pub happyness:u32, // how happy it is with the firing frequency, 0 is happiest
   
+  pub is_output: bool,
+
   pub inputs:Vec<i32>, // total inputs for this tick, post weight
   input_memory:Vec<i32>, // Memory of previous values, currently 5
 
@@ -34,13 +35,14 @@ pub struct Neuron {
 impl Neuron {
   /// Makes a new neuron
   // pub fn new(id:u32) -> Self {
-  pub fn new() -> Self {
+  pub fn new(is_output:bool) -> Self {
     Neuron {
         // id,
         position:Vec2::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
         happyness:25,
         base_threshold:50,
         threshold:50,
+        is_output,
         
         input_memory:vec![0,0,0,0,0],
         inputs:Vec::new(),
@@ -53,12 +55,12 @@ impl Neuron {
         avg_t:0,
     }
   }
-  /// Rolls a save check to see if it should die or gets another chance at life.
+  /// Rolls a save check to see if it should die or gets another chance at life, and if so how many.
   /// Only relies on happyness value, but only really used if it doesnt have any outputs or inputs left.
   pub fn check_no_more_axion_viability(&self) -> Option<i32> {
     let roll = rand::gen_range(0,MAX_HAPPY_VALUE/2);
     if roll + self.happyness < MAX_HAPPY_VALUE/5 {
-      return Some(rand::gen_range(5,10))
+      return Some(rand::gen_range(10,20))
     }
     None
   }
@@ -112,6 +114,7 @@ impl Neuron {
 impl Neuron {
   /// Draws the Neuron where ever it is, gives it a color based on its firing status
   pub fn draw(&self) {
+    if self.is_output { draw_circle(self.position.x, self.position.y, 10.0, OUTPUT_COLOR); return;}
     let color = if self.delta_t == 0 {RED} else if self.delta_t < 5 {YELLOW} else {GRAY};
     draw_circle(self.position.x, self.position.y, 10.0, color);
   }
@@ -127,6 +130,7 @@ impl Neuron {
   } 
   /// Checks if the neuron should be killed
   pub fn check_to_kill(&self) -> bool {
+    if self.is_output {return false}
     if self.happyness >= MAX_HAPPY_VALUE {return true}
     if self.delta_t > INACTIVITY_DEATH_TIME {return true}
     false

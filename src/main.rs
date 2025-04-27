@@ -11,8 +11,8 @@ mod consts;
 use neuron::Neuron;
 use axion::Axion;
 use brain::Brain;
-use input::Input;
-use output::Output;
+// use input::Input;
+// use output::Output;
 use consts::*;
 /// Calculate Modulus operations
 fn modulo<T>(a: T, b: T) -> T where T: std::ops::Rem<Output = T> + std::ops::Add<Output = T> + Copy, {((a % b) + b) % b}

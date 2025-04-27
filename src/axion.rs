@@ -1,11 +1,12 @@
 // use crate::neuron::Neuron;
 use macroquad::{rand, color::*};
-
+const INPUT_COLOR:Color = Color::new(0.5, 0.25, 0.0, 1.0);
 pub struct Axion {
   pub id:u128, // personal id
   pub id_source:u32, // id of the signal activator
   pub id_sink:u32, // id of the signal recipient
 
+  is_input:bool,
   pub strength:i32, // how strong the fire is, -100 - 100
   reliable:u32, // value 0-100 in terms of how predictible it is for it to fire, bigger is better
   happyness:u32, // how happy the input neuron (sink) is, 0-150, low is good
@@ -15,12 +16,13 @@ pub struct Axion {
 }
 // General
 impl Axion {
-  pub fn new(id_source:u32, id_sink:u32, id:u128) -> Self {
+  pub fn new(id_source:u32, id_sink:u32, id:u128, is_input:bool) -> Self {
     Axion {
       id, // personal id
       id_source, // id of the signal activator
       id_sink, // id of the signal recipient
     
+      is_input,
       strength:rand::gen_range(-100,100), // how strong the fire is, -100 - 100
       reliable:rand::gen_range(0,50), // value 0-50 in terms of how predictible it is for it to fire, half its max
       happyness:rand::gen_range(0,75), // how happy it is, half its max of 150
@@ -38,6 +40,9 @@ impl Axion {
   // delta_t here is the time since last firing of the neuron
   pub fn fire(&mut self, delta_t:u32) -> (u32,i32) {
     // Order important, don't mix them up
+    if self.is_input {
+      return (self.id_sink, self.strength);
+    }
     self.mutate_strength();
     self.math(delta_t);
     (self.id_sink, self.strength)
@@ -65,21 +70,29 @@ impl Axion {
   }
 
   pub fn get_to_draw(&self) -> (u32, u32, Color) {
+    if self.is_input {
+      let color = match self.strength {
+        s if s > 0 => GREEN, // Green for excitatory
+        s if s < 0 => RED, // Red for inhibitory
+        _ => GRAY, // Gray for neutral
+      };
+      return (0, self.id_sink, INPUT_COLOR);
+    }
+    
     let (source, sink) = (
       self.id_source, self.id_sink
     );
     let color = match self.strength {
       s if s > 0 => GREEN, // Green for excitatory
       s if s < 0 => RED, // Red for inhibitory
-      _ => GRAY, // Gray for neutral
+      _ => GRAY, // Gray for TB Killed
     };
     (source, sink, color)
   }
 }
 
-// Mutate: TBD
+// Mutate
 impl Axion {
-
   /// Changes the strength based on how happy and reliable the axion is
   fn mutate_strength(&mut self) {
 

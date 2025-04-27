@@ -413,17 +413,40 @@ impl Brain {
   fn add_neuron(&mut self) -> u32 {
     self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    self.neurons.insert(id, Neuron::new());
+    self.neurons.insert(id, Neuron::new(false));
     id
   }
+  fn add_output(&mut self) -> u32 {
+    self.num_of_outputs +=1;
+    let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
+    self.neurons.insert(id, Neuron::new(true));
+    id
+  }
+  
   fn add_axion(&mut self, source_id: u32, sink_id: u32) -> u128 {
     self.num_of_axions +=1;
     let id = self.axions.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    let axion = Axion::new(source_id, sink_id, id);
+    let axion = Axion::new(source_id, sink_id, id, false);
     self.axions.insert(id, axion);
 
     // Update neuron connections
     if let Some(source_neuron) = self.neurons.get_mut(&source_id) {
+      source_neuron.output_axions.push(id);
+    }
+    if let Some(sink_neuron) = self.neurons.get_mut(&sink_id) {
+      sink_neuron.input_axions.push(id);
+    }
+
+    id
+  }
+  fn add_input(&mut self, sink_id:u32) -> u128 {
+    self.num_of_inputs +=1;
+    let id = self.axions.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
+    let input = Axion::new(0,sink_id, id, true);
+    self.axions.insert(id, axion);
+
+    // Update neuron connections
+    if let Some(source_neuron) = self.neurons.get_mut(&0) {
       source_neuron.output_axions.push(id);
     }
     if let Some(sink_neuron) = self.neurons.get_mut(&sink_id) {
