@@ -77,8 +77,8 @@ pub mod update_threads {
     use std::collections::HashMap;
     use macroquad::math::Vec2;
     use rayon::prelude::*;
-    use crate::Neuron;
-    use crate::Axion;
+    use crate::neuron::Neuron;
+    use crate::axion::Axion;
     use crate::grid::grid::GridCell;
     use crate::consts::*;
 
