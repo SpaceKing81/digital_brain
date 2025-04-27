@@ -5,7 +5,6 @@ use macroquad::{
   math::Vec2, rand, shapes::*
   // window::{screen_width,screen_height},
 };
-use std::u128;
 
 use crate::{
   //
@@ -27,7 +26,7 @@ pub struct Brain {
 
   active_neurons:HashSet<u32>,
 }
-
+ 
 impl Brain {
   fn new() -> Self {
     Brain {
@@ -98,87 +97,69 @@ impl Brain {
     }
     (brain, input_ids, output_ids)
   }
-  pub fn tick(&mut self, input:bool) {
-    // one tick passes
-    self.clock += 1;
-    // if an input is triggered
-    if input {
-      for id in 0..self.num_of_inputs {
-        self.active_neurons.extend(self.inputs[&id].output_neurons.clone());
-      }
-    }
+  /// Ticks over the brain simulation for however many specified ticks, with a default of 1 iteration.
+  /// No input, however all the output id's are collected and output at the end
+  pub fn tick(&mut self, num_iterations:Option<u32>) -> Vec<u32> {
+    let mut output = Vec::new();
+    for _ in 0..num_iterations.unwrap_or(1) {
+      // one tick passes
+      self.clock += 1;
+      
+      let active_neurons_to_iter: Vec<u32> = self.active_neurons.drain().collect();
+      let active_neurons: HashSet<u32> = active_neurons_to_iter.iter().copied().collect();
+      
+      let mut axions_to_remove = Vec::new();
+      let mut neurons_to_remove= Vec::new();
 
-    let active_neurons_to_iter: Vec<u32> = self.active_neurons.drain().collect();
-    let active_neurons: HashSet<u32> = active_neurons_to_iter.iter().copied().collect();
-    
-    let mut axions_to_remove = Vec::new();
-    let mut neurons_to_remove= Vec::new();
-
-    println!("{} neruons to fire this tick", active_neurons.len());
-    for neuron_id in active_neurons_to_iter {
-      if let Some(neuron) = self.neurons.get_mut(&neuron_id) {
-        // update the input neuron happyness
-        let input_axions = neuron.input_axions.clone();
-        let happyness = neuron.happyness;
-        for axion_id in input_axions {
-          if let Some(axion) = self.axions.get_mut(&axion_id) {
-            axion.update_happyness(happyness);
-          }
-        }
-        // update the neurons
-        neuron.update(self.clock);
-        // Check if it should die
-        if neuron.check_to_kill() {neurons_to_remove.push(neuron_id) }
-        // check if it should fire
-        if neuron.ready_to_fire() {
-          // get the outputs
-          let delta_t = neuron.delta_t;
-          let output_axions = neuron.output_axions.clone();
-          neuron.fired();
-
-          for axion_id in output_axions {
+      for neuron_id in active_neurons_to_iter {
+        if let Some(neuron) = self.neurons.get_mut(&neuron_id) {
+          // update the input neuron happyness
+          let input_axions = neuron.input_axions.clone();
+          let happyness = neuron.happyness;
+          for axion_id in input_axions {
             if let Some(axion) = self.axions.get_mut(&axion_id) {
-              let (input_id, strength) = axion.fire(delta_t);
-              if strength != 0 {
-                // update all the input neuron strenght memories
-                if let Some(input_neuron) = self.neurons.get_mut(&input_id) {
-                  input_neuron.inputs.push(strength);
-                // add them to the next active neuron cycle if its not a repeat
-                  if !active_neurons.contains(&input_id) {
-                    self.active_neurons.insert(input_id);
-                  }
-                
-                }
-              } else {axions_to_remove.push(axion_id);}
+              axion.update_happyness(happyness);
             }
           }
-        }    
-      }
-    }
-    // remove all inactive neurons
-    for axion_id in axions_to_remove {self.remove_axion(axion_id);}
-    for neuron_id in neurons_to_remove {self.no_more_outputs(neuron_id);}
-    println!("Num of total neurons: {}", self.neurons.len());
+          // update the neurons
+          neuron.update(self.clock);
+          // Check if it should die
+          if neuron.check_to_kill() {neurons_to_remove.push(neuron_id)}
+          // check if it should fire
+          if neuron.ready_to_fire() {
+            let delta_t = neuron.fired();
 
+            // Check if its an output
+            if neuron.is_output {output.push(neuron_id);continue;}
+            for axion_id in neuron.output_axions {
+              if let Some(axion) = self.axions.get_mut(&axion_id) {
+                let (input_id, strength) = axion.fire(delta_t);
+                if strength != 0 {
+                  // update all the input neuron strength memories
+                  if let Some(input_neuron) = self.neurons.get_mut(&input_id) {
+                    input_neuron.inputs.push(strength);
+                  // add them to the next active neuron cycle if its not a repeat
+                    if !active_neurons.contains(&input_id) {
+                      self.active_neurons.insert(input_id);
+                    }
+                  
+                  }
+                } else {axions_to_remove.push(axion_id);}
+              }}}}}
+
+      // remove all inactive neurons
+      for axion_id in axions_to_remove {self.remove_axion(axion_id);}
+      for neuron_id in neurons_to_remove {self.no_more_outputs(neuron_id);}
+  }
+  let output: HashSet<u32> = output.into_iter().collect();
+  let output: Vec<u32> = output.into_iter().collect();
+  output
   }
   
   pub fn general_update(&mut self, center: Vec2) {
     let mut neurons_to_remove: Vec<u32> = Vec::new();
     let mut axions_to_remove = Vec::new();
-  
-    // Update inputs and axions
-    for input in self.inputs.values_mut() {
-        input.update();
-        input.draw();
-    }
-
-    for (&id, axion) in self.axions.iter() {
-        if axion.strength == 0 {
-          axions_to_remove.push(id);
-        }
-        self.draw_axion(axion);
-    }
-
+    
     // Step 1: build grid
     let grid = GridCell::build_spatial_grid(&self.neurons);
 
@@ -195,25 +176,33 @@ impl Brain {
         |a, b| self.spring_force(a, b),
     );
 
-    // Step 3: apply changes serially
-    for n_up in neuron_updates {
-        if let Some(neuron) = self.neurons.get_mut(&n_up.id) {
+    // Step 3: apply calculated changes normally for both
+    for neuron_changes in neuron_updates {
+        if let Some(neuron) = self.neurons.get_mut(&neuron_changes.id) {
           if neuron.check_to_kill() {
-            neurons_to_remove.push(n_up.id);
+            neurons_to_remove.push(neuron_changes.id);
             return;
           }
-          neuron.position = n_up.new_position;
+          neuron.position = neuron_changes.new_position;
           neuron.update(self.clock);
         }
     }
 
-    for a_up in axion_updates {
-        if let Some(axion) = self.axions.get_mut(&a_up.id) {
-            axion.update_happyness(a_up.new_happyness);
+    for axion_changes in axion_updates {
+        if let Some(axion) = self.axions.get_mut(&axion_changes.id) {
+            axion.update_happyness(axion_changes.new_happyness);
         }
     }
 
-    // Step 4: draw neurons and outputs
+    // Step 4: Update Axions + Draw
+    for (&id, axion) in self.axions.iter() {
+      if axion.strength == 0 {
+        axions_to_remove.push(id);
+      }
+      self.draw_axion(axion);
+    }
+
+    // Step 5: Draw neurons
     for neuron in self.neurons.values() {
         neuron.draw();
     }
@@ -264,57 +253,7 @@ impl Brain {
 
 /// Graphics
 impl Brain {
-  pub fn update_layout(&mut self, center:Vec2) {
-    let neuron_ids: Vec<u32> = self.neurons.keys().cloned().collect();
-    let mut new_positions: HashMap<u32, Vec2> = HashMap::new();
-
-    // Spring Attraction
-    for (_id,axion) in &self.axions {
-      let source = axion.id_source;
-      let sink = axion.id_sink;
-      let pos1 = self.neurons.get(&source).unwrap().position.clone();
-      let pos2 = self.neurons.get(&sink).unwrap().position.clone();
-      let distance_s = pos1.distance(pos2);
-      if distance_s > 0.0 { // Prevent division by zero
-        let direction_s = (pos1 - pos2) / distance_s;
-        let spring = SPRING * distance_s;
-        let delta = spring * direction_s * TIME_STEP;
-        new_positions.entry(source).and_modify(|p| *p -= delta).or_insert(-delta);
-        new_positions.entry(sink).and_modify(|p| *p += delta).or_insert(delta);
-      }
-    }
-    for &id1 in &neuron_ids {
-      let mut delta = Vec2::ZERO;
-      let pos1 = self.neurons[&id1].position;
-      // Gravity Attraction
-      let distance_g = pos1.distance(center);
-      if distance_g > GRAVITY_SUFRACE { // Prevent division by zero
-        let direction_g = (pos1 - center) / distance_g;
-        let gravity = GRAVITY * distance_g;
-        delta -= gravity * direction_g * TIME_STEP;
-      }
-      for &id2 in &neuron_ids {
-        if id1 != id2 {
-          let pos2 = self.neurons[&id2].position;
-          // Like-Charge Repulsion
-          let distance_e = pos1.distance(pos2);
-          if distance_e > ELECTRIC_SUFRACE { // Prevent division by zero
-            let direction_e = (pos1 - pos2) / distance_e;
-            let electric = COULOMB / (distance_e * distance_e);
-            delta += electric * direction_e * TIME_STEP;
-          }
-        }
-      }
-      if let Some(offset_spring) = new_positions.get(&id1) {
-        self.neurons.entry(id1).and_modify(|p| p.position += offset_spring.clone() + delta);
-      } else {
-        self.neurons.entry(id1).and_modify(|p| p.position += delta);
-      }
-    }
-  }
-  pub fn draw(&self) {
-
-    // Draw axons first (so they are behind neurons)
+  fn draw(&self) {
     for axion in self.axions.values() {
       self.draw_axion(axion);
     }
@@ -349,19 +288,35 @@ impl Brain {
 impl Brain {
   pub fn no_more_outputs(&mut self, neuron_id: u32) {
     if let Some(neuron) = self.neurons.get(&neuron_id) {
-      let roll = rand::gen_range(0,70);
-
-      if roll + neuron.happyness < 50 {
-        // Create new connections
-        for _ in 0..rand::gen_range(5,10) {
-          let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
-          if sink_id != neuron_id {
-            self.add_axion(neuron_id, sink_id);
+      if neuron.is_output {return;}
+      if let Some(roll) = neuron.roll_save_check(false) {
+          // Create new connections
+          for _ in 0..rand::gen_range(5,10) {
+            let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
+            if sink_id != neuron_id {
+              self.add_axion(neuron_id, sink_id);
+            }
           }
-        }
-      } else {
-        // Commit suicide
-        self.remove_neuron(neuron_id);
+        } else {
+          // Commit suicide
+          self.remove_neuron(neuron_id);
+      }
+    }
+  }
+  pub fn no_more_inputs(&mut self, neuron_id: u32) {
+    if let Some(neuron) = self.neurons.get(&neuron_id) {
+      let save = if neuron.is_output {neuron.roll_save_check(true)} else {neuron.roll_save_check(false)};
+      if let Some(roll) = save {
+          // Create new connections
+          for _ in 0..rand::gen_range(5,10) {
+            let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
+            if sink_id != neuron_id {
+              self.add_axion(neuron_id, sink_id);
+            }
+          }
+        } else {
+          // Commit suicide
+          self.remove_neuron(neuron_id);
       }
     }
   }

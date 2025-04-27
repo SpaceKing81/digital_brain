@@ -57,7 +57,8 @@ impl Neuron {
   }
   /// Rolls a save check to see if it should die or gets another chance at life, and if so how many.
   /// Only relies on happyness value, but only really used if it doesnt have any outputs or inputs left.
-  pub fn roll_save_check(&self) -> Option<i32> {
+  pub fn roll_save_check(&self, output:bool) -> Option<i32> {
+    if output {return Some(rand::gen_range(10,20))}
     let roll = rand::gen_range(0,MAX_HAPPY_VALUE/2);
     if roll + self.happyness < MAX_HAPPY_VALUE/5 {
       return Some(rand::gen_range(10,20))
@@ -67,9 +68,11 @@ impl Neuron {
 }
 // Update
 impl Neuron {
-  /// Honestly useless, just sets the tick to 0
-  pub fn fired(&mut self) {
+  /// Honestly useless, just sets the tick to 0, returns time since last fired
+  pub fn fired(&mut self) -> u32 {
+    let delta_t = self.delta_t;
     self.delta_t = 0;
+    delta_t
   }
   
   /// Housekeeping stuff, memory management, time updating, basic universal update.

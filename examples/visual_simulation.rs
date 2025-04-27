@@ -1,13 +1,8 @@
 use macroquad::prelude::*;
 use digital_brain::Brain;
-use neuron::Neuron;
-use axion::Axion;
-use brain::Brain;
-// use input::Input;
-// use output::Output;
-use consts::*;
+
 /// Calculate Modulus operations
-fn modulo<T>(a: T, b: T) -> T where T: std::ops::Rem<Output = T> + std::ops::Add<Output = T> + Copy, {((a % b) + b) % b}
+// fn modulo<T>(a: T, b: T) -> T where T: std::ops::Rem<Output = T> + std::ops::Add<Output = T> + Copy, {((a % b) + b) % b}
 fn window_conf() -> Conf {
     Conf {
         window_title: "Brain Simulation".to_owned(),
@@ -27,9 +22,7 @@ async fn main() {
     let mut ticks = 0.0;
     let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
     loop {
-    
-    let mut brain = Brain::new();
-    brain.spin_up_new(STARTING_NEURONS,STARTING_INPUTS, STARTING_OUTPUTS);
+    let (brain, inputs, outputs) = Brain::spin_up_new(STARTING_NEURONS,STARTING_INPUTS, STARTING_OUTPUTS);
     println!("Brain initialized. Entering continuous operations...");
     // Main loop
     loop {
@@ -46,7 +39,7 @@ async fn main() {
             // let fire = get_time() >= 10.0 && get_time() <= 11.0;
 
             println!("new tick: {}", fire);
-            brain.tick(fire);
+            brain.tick(5);
             let time = if get_time() == 0.0 {0.02} else {get_time()};
             if ticks/time < IDEAL_TPS || is_key_down(KeyCode::Escape){ break; }
         }
