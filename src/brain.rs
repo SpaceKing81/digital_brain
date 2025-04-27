@@ -209,20 +209,8 @@ impl Brain {
     for neuron in self.neurons.values() {
         neuron.draw();
     }
-
-    for output in self.outputs.values_mut() {
-        output.update(self.clock);
-        output.draw();
-    }
   }
   
-  
-  // Can be found and removed at the end of spin up new
-  fn temp_for_output(&self) {
-    if &self.num_of_outputs == &5 {
-      return
-    }
-  }
 
 }
 
@@ -325,13 +313,6 @@ impl Brain {
     // Draw neurons
     for neuron in self.neurons.values() {
       neuron.draw();
-    }
-    for input in self.inputs.values() {
-      input.draw();
-      // Crimson
-    }
-    for output in self.outputs.values() {
-      output.draw();
     }
 }
   
