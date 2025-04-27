@@ -9,7 +9,7 @@ use std::u128;
 
 use crate::{
   //
-  Axion, Input, Neuron, Output, grid::{grid::*, update_threads::*},consts::*,
+  Axion, Neuron, grid::{grid::*, update_threads::*},consts::*,
   //
 };
 
@@ -19,14 +19,9 @@ pub struct Brain {
 
   pub neurons: HashMap<u32, Neuron>,
   pub axions: HashMap<u128,Axion>,
-  pub inputs:HashMap<u32, Input>,
-  pub outputs:HashMap<u32, Output>,
 
   num_of_neurons: u32,
   num_of_axions: u128,
-  num_of_inputs: u32,
-  num_of_outputs: u32,
-
 
   active_neurons:HashSet<u32>,
 }
@@ -38,86 +33,63 @@ impl Brain {
 
       neurons: HashMap::new(),
       axions: HashMap::new(),
-      inputs:HashMap::new(),
-      outputs:HashMap::new(),
 
       num_of_neurons:0,
       num_of_axions:0,
-      num_of_inputs: 0,
-      num_of_outputs: 0,
 
 
       active_neurons:HashSet::new(),
     }
   }
-  pub fn spin_up_new(&mut self, num_neurons: u32, num_input: u32, num_output: u32) {
+  pub fn spin_up_new(&mut self, num_neurons: u32, num_input: u128, num_output: u32) -> (Vec<u128>, Vec<u32>) {
     // Step 1: Create neurons
     for _ in 0..(num_neurons + 10) {
-        self.add_neuron();
+      self.add_neuron();
+    }
+    let mut output_ids: Vec<u32> = Vec::new();
+    // Step 2: Add outputs
+    for _ in 0..num_output {
+      output_ids.push(self.add_output());
     }
 
     // Cache neuron IDs into a Vec for efficient random access
     let neuron_ids: Vec<u32> = self.neurons.keys().copied().collect();
     let len = neuron_ids.len();
 
-    // Step 2: Connect neurons with axons
+    // Step 2: Connect neurons with axions
     for _ in 0..(num_neurons * 2) {
-        let source_id = neuron_ids[rand::gen_range(0, len)];
-        let sink_id = neuron_ids[rand::gen_range(0, len)];
-        if source_id != sink_id {
-            self.add_axion(source_id, sink_id);
-            self.num_of_axions += 1;
-        }
+      let source_id = neuron_ids[rand::gen_range(0, len)];
+      let sink_id = neuron_ids[rand::gen_range(0, len)];
+      
+      if output_ids.contains(&source_id) && !output_ids.contains(&sink_id) {
+        self.add_axion(sink_id,source_id);
+        self.num_of_axions += 1;
+      } else if source_id != sink_id {
+        self.add_axion(source_id, sink_id);
+        self.num_of_axions += 1;
+      }
     }
 
     // Identify and mark neurons without outputs
     for id in &neuron_ids[..num_neurons as usize] {
-        if let Some(neuron) = self.neurons.get(id) {
-            if neuron.output_axions.is_empty() {
-                self.no_more_outputs(*id);
-            }
+      if let Some(neuron) = self.neurons.get(id) {
+        if neuron.output_axions.is_empty() && !neuron.is_output {
+          self.no_more_outputs(*id);
         }
+      }
     }
 
-    // Step 3: Set up inputs
-    self.num_of_inputs = num_input;
-    for id in 0..num_input {
-        let mut input = Input::new(id);
+    // Step 3: Add + Configure Inputs
+    
+    // Return [inputs id, outputs id]
+    
 
-        let connect_count = rand::gen_range(1, std::cmp::max(self.num_of_neurons, 2));
-        let mut seen = std::collections::HashSet::with_capacity(connect_count as usize);
-
-        while seen.len() < connect_count as usize {
-            let i = neuron_ids[rand::gen_range(0, len)];
-            if seen.insert(i) && self.neurons.contains_key(&i) {
-                input.output_neurons.push(i);
-            }
-        }
-
-        self.inputs.insert(id, input);
-    }
-
-    // Step 4: Set up outputs
-    self.num_of_inputs = num_output;
-    for id in 0..num_output {
-        let mut output = Output::new(id);
-
-        let connect_count = rand::gen_range(1, std::cmp::max(len, 2));
-        let mut seen = std::collections::HashSet::with_capacity(connect_count as usize);
-
-        while seen.len() < connect_count as usize {
-            let i = neuron_ids[rand::gen_range(0, len)];
-            if seen.insert(i) && self.neurons.contains_key(&i) {
-                output.input_neurons.push(i);
-            }
-        }
-
-        self.outputs.insert(id, output);
-    }
+    (Vec::new(),Vec::new())
+    
 
 
     
-}
+  }
   pub fn tick(&mut self, input:bool) {
     // one tick passes
     self.clock += 1;
@@ -417,7 +389,7 @@ impl Brain {
     id
   }
   fn add_output(&mut self) -> u32 {
-    self.num_of_outputs +=1;
+    self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
     self.neurons.insert(id, Neuron::new(true));
     id
@@ -440,15 +412,12 @@ impl Brain {
     id
   }
   fn add_input(&mut self, sink_id:u32) -> u128 {
-    self.num_of_inputs +=1;
+    self.num_of_axions +=1;
     let id = self.axions.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
     let input = Axion::new(0,sink_id, id, true);
-    self.axions.insert(id, axion);
+    self.axions.insert(id, input);
 
     // Update neuron connections
-    if let Some(source_neuron) = self.neurons.get_mut(&0) {
-      source_neuron.output_axions.push(id);
-    }
     if let Some(sink_neuron) = self.neurons.get_mut(&sink_id) {
       sink_neuron.input_axions.push(id);
     }
@@ -459,7 +428,7 @@ impl Brain {
   fn remove_neuron(&mut self, neuron_id: u32) {
       if let Some(neuron) = self.neurons.remove(&neuron_id) {
           // Remove all input axons
-          self.num_of_neurons -= 1;
+          self.num_of_neurons.saturating_sub(1);
           for axion_id in neuron.input_axions {
               self.remove_axion(axion_id);
           }
@@ -472,6 +441,7 @@ impl Brain {
   fn remove_axion(&mut self, axion_id: u128) {
     if let Some(axion) = self.axions.remove(&axion_id) {
       // Remove axon from source neuron's output list
+      self.num_of_axions.saturating_sub(1);
       if let Some(source_neuron) = self.neurons.get_mut(&axion.id_source) {
         source_neuron.output_axions.retain(|&id| id != axion_id);
       }
@@ -485,16 +455,17 @@ impl Brain {
 }
 
 
-// need a list for all the neurons
-// need a list for all the axions
+/*
+Current Plan and work:
+- combine inputs into axions and outputs into neurons
+- set up the secondary special pipelines for both, nothing to fancy, but some special treatment here and there
+- uproot current framework, replace with pure input-output
+- outputs and input number determined on startup, full list of each with names returned before simulation begins
+- anytime output fires a tick, return a vec of output id's
+- set up a system to input a vec every tick tied to the individual outputs
+- thinking of setting up and connecting a game of pong for test-casing inputs + outputs
+- 5x5 grid, one movable 2x1 paddle, a ball that just bounces back and forth
+- chaos and reset any time the ball hits the wall, order any time the ball hits the paddle
 
-// need a count for all the neurons
-// need a count for all the axions
 
-// need a list of input-nodes
-// need a list of output-nodes
-// need special connection for the input nodes -> neurons
-// need special connection for the neurons -> output nodes
-
-// need a master clock
-// need a list of all activated neurons
+*/

@@ -1,6 +1,6 @@
 //Simulation
 pub const STARTING_NEURONS:u32 = 1000;
-pub const STARTING_INPUTS:u32 = 10;
+pub const STARTING_INPUTS:u128 = 10;
 pub const STARTING_OUTPUTS:u32 = 10;
 pub const IDEAL_TPS:f64 = 60.0;
 pub const GRID_SIZE: f32 = 20.0;
