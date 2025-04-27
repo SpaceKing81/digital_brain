@@ -50,7 +50,7 @@ impl Brain {
       active_neurons:HashSet::new(),
     }
   }
-  pub fn spin_up_new(&mut self, num_neurons: u32, num_input: u32) {
+  pub fn spin_up_new(&mut self, num_neurons: u32, num_input: u32, num_output: u32) {
     // Step 1: Create neurons
     for _ in 0..(num_neurons + 10) {
         self.add_neuron();
@@ -98,8 +98,8 @@ impl Brain {
     }
 
     // Step 4: Set up outputs
-    self.num_of_inputs = num_input;
-    for id in 0..num_input {
+    self.num_of_inputs = num_output;
+    for id in 0..num_output {
         let mut input = Input::new(id);
 
         let connect_count = rand::gen_range(1, std::cmp::max(self.num_of_neurons, 2));

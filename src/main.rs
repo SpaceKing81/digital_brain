@@ -37,7 +37,7 @@ async fn main() {
     loop {
     
     let mut brain = Brain::new();
-    brain.spin_up_new(STARTING_NEURONS,STARTING_INPUTS);
+    brain.spin_up_new(STARTING_NEURONS,STARTING_INPUTS, STARTING_OUTPUTS);
     println!("Brain initialized. Entering continuous operations...");
     // Main loop
     loop {
