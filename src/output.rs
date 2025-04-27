@@ -17,7 +17,7 @@ pub struct Output {
   
   // This space will hold the 'plug in' for where the output will be
   
-  pub input_axions: Vec<u128>, // the neurons that connect to it, no axion needed, basiclly an axion
+  pub input_neurons: Vec<u32>, // the neurons that connect to it, no axion needed, basiclly an axion
   pub inputs:Vec<i32>, // total inputs for this tick, post weight
   input_memory:Vec<i32>, // Memory of previous values
 }
@@ -29,7 +29,7 @@ impl Output {
       position:Vec2::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
       tick:0,
       last_tick:0,
-      input_axions:Vec::new(),
+      input_neurons:Vec::new(),
       base_threshold:OUTPUT_THRESHOLD,
       inputs:Vec::new(),
       input_memory:Vec::new(),

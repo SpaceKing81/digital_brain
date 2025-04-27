@@ -50,7 +50,7 @@ async fn main() {
         // Update the brain
         loop {
             // let fire = (modulo(get_time(),5.0)) as i32 == 0;
-            let fire = if (!is_key_down(KeyCode::S) && (modulo(get_time(),5.0)) as i32 == 0) || is_key_down(KeyCode::F) { true } else { false };
+            let fire = if (!is_key_down(KeyCode::S) && (modulo(ticks,15.0)) as i32 == 0) || is_key_down(KeyCode::F) { true } else { false };
             // let fire = get_time() >= 10.0 && get_time() <= 11.0;
 
             println!("new tick: {}", fire);

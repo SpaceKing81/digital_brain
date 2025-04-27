@@ -100,19 +100,19 @@ impl Brain {
     // Step 4: Set up outputs
     self.num_of_inputs = num_output;
     for id in 0..num_output {
-        let mut input = Input::new(id);
+        let mut output = Output::new(id);
 
-        let connect_count = rand::gen_range(1, std::cmp::max(self.num_of_neurons, 2));
+        let connect_count = rand::gen_range(1, std::cmp::max(len, 2));
         let mut seen = std::collections::HashSet::with_capacity(connect_count as usize);
 
         while seen.len() < connect_count as usize {
             let i = neuron_ids[rand::gen_range(0, len)];
             if seen.insert(i) && self.neurons.contains_key(&i) {
-                input.output_neurons.push(i);
+                output.input_neurons.push(i);
             }
         }
 
-        self.inputs.insert(id, input);
+        self.outputs.insert(id, output);
     }
 
 
