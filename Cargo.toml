@@ -1,9 +1,19 @@
 [package]
-name = "brain"
+name = "digital_brain"
 version = "0.1.0"
 edition = "2021"
+authors     = ["You <you@example.com>"]
+description = "A digital brain"
+license     = "MIT OR Apache-2.0"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+
+[lib]
+name = "brain_sim"
+path = "src/lib.rs"
 
 [dependencies]
 macroquad = "0.4"

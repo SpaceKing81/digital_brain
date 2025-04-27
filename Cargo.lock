@@ -39,15 +39,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c8214115b7bf84099f1309324e63141d4c5d7cc26862f97a0a857dbefe165bd"
 
 [[package]]
-name = "brain"
-version = "0.1.0"
-dependencies = [
- "dashmap",
- "macroquad",
- "rayon",
-]
-
-[[package]]
 name = "bytemuck"
 version = "1.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -116,6 +107,15 @@ dependencies = [
  "lock_api",
  "once_cell",
  "parking_lot_core",
+]
+
+[[package]]
+name = "digital_brain"
+version = "0.1.0"
+dependencies = [
+ "dashmap",
+ "macroquad",
+ "rayon",
 ]
 
 [[package]]

@@ -1,13 +1,5 @@
 use macroquad::prelude::*;
-// use std::collections::{HashMap, HashSet};
-mod neuron;
-mod axion;
-mod brain;
-// mod input;
-// mod output;
-mod grid;
-mod consts;
-
+use digital_brain::Brain;
 use neuron::Neuron;
 use axion::Axion;
 use brain::Brain;
