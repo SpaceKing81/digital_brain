@@ -2,7 +2,7 @@
 name = "digital_brain"
 version = "0.1.0"
 edition = "2021"
-authors     = ["You <you@example.com>"]
+authors     = ["Mohammed Vohra"]
 description = "A digital brain"
 license     = "MIT OR Apache-2.0"
 
@@ -12,7 +12,7 @@ license     = "MIT OR Apache-2.0"
 
 
 [lib]
-name = "brain_sim"
+name = "digital_brain"
 path = "src/lib.rs"
 
 [dependencies]
