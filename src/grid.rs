@@ -76,7 +76,6 @@ pub mod update_threads {
 
     use std::collections::HashMap;
     use macroquad::math::Vec2;
-    use std::sync::{Arc, Mutex};
     use rayon::prelude::*;
     use crate::Neuron;
     use crate::Axion;
