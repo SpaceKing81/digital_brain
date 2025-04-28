@@ -55,13 +55,16 @@ pub mod grid {
                     if cell.count.floor() == 0.0 {
                         continue;
                     }
+                                        
+                    let pos2:Vec2 = cell.total_position / cell.count;
+                    let dir_e = position - pos2;
+                    let distance:f32 = dir_e.length();
+                    
+                    if distance > ELECTRIC_SUFRACE {
+                        let repulsion_strength = COULOMB / distance.powi(2);
+                        force += (dir_e.normalize() * repulsion_strength * TIME_STEP) * cell.count;
 
-                    let center:Vec2 = cell.total_position / cell.count;
-                    let dir = position - center;
-                    let distance = dir.length().max(ELECTRIC_SUFRACE);
-                    let repulsion_strength = COULOMB / distance.powi(2);
-
-                    force += (dir.normalize() * repulsion_strength) * cell.count;
+                    } // Prevent division by zero
                 }
             }
         }
@@ -145,7 +148,6 @@ pub mod update_threads {
                             total_force -= spring_force_fn(id, ax.id_sink).unwrap_or_default();
                         }
                     }
-
                     let neuron_update = NeuronUpdate {
                         id,
                         new_position: neuron.position + total_force,

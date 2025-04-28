@@ -128,10 +128,10 @@ impl Brain {
           // check if it should fire
           if neuron.ready_to_fire() {
             let delta_t = neuron.fired();
-
+            let output_axions = neuron.output_axions.clone();
             // Check if its an output
             if neuron.is_output {output.push(neuron_id);continue;}
-            for axion_id in neuron.output_axions {
+            for axion_id in output_axions {
               if let Some(axion) = self.axions.get_mut(&axion_id) {
                 let (input_id, strength) = axion.fire(delta_t);
                 if strength != 0 {
@@ -159,10 +159,9 @@ impl Brain {
   pub fn general_update(&mut self, center: Vec2) {
     let mut neurons_to_remove: Vec<u32> = Vec::new();
     let mut axions_to_remove = Vec::new();
-    
+
     // Step 1: build grid
     let grid = GridCell::build_spatial_grid(&self.neurons);
-
     // Step 2: do parallel update
     let (
       neuron_updates, 

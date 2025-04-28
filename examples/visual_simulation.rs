@@ -13,6 +13,11 @@ fn window_conf() -> Conf {
 }
 
 
+const STARTING_NEURONS:u32 = 1000;
+const STARTING_INPUTS:u128 = 10;
+const STARTING_OUTPUTS:u32 = 1;
+const IDEAL_TPS:f64 = 60.0;
+
 #[macroquad::main(window_conf)]
 async fn main() {
     
@@ -21,25 +26,35 @@ async fn main() {
     let mut crash = 0;
     let mut ticks = 0.0;
     let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
-    loop {
-    let (brain, inputs, outputs) = Brain::spin_up_new(STARTING_NEURONS,STARTING_INPUTS, STARTING_OUTPUTS);
-    println!("Brain initialized. Entering continuous operations...");
+
+    for i in 0..1 {
+    let (
+        mut brain, 
+        mut inputs, 
+        mut outputs
+    ) = Brain::spin_up_new(
+        STARTING_NEURONS,
+        STARTING_INPUTS, 
+        STARTING_OUTPUTS
+    );
+    println!("Brain initialized. Thinking...");
+    
     // Main loop
-    loop {
+    for i in 0..1 {
         // Handle Ending
         if is_key_down(KeyCode::Escape) {
             println!("Terminating Brain...");
             crash = 4;
             break;
         }
+
         // Update the brain
         loop {
             // let fire = (modulo(get_time(),5.0)) as i32 == 0;
-            let fire = if (!is_key_down(KeyCode::S) && (modulo(ticks,15.0)) as i32 == 0) || is_key_down(KeyCode::F) { true } else { false };
+            let fire = if (!is_key_down(KeyCode::S) && (ticks%15.0 == 0.0)) || is_key_down(KeyCode::F) { true } else { false };
             // let fire = get_time() >= 10.0 && get_time() <= 11.0;
 
-            println!("new tick: {}", fire);
-            brain.tick(5);
+            brain.tick(Some(5));
             let time = if get_time() == 0.0 {0.02} else {get_time()};
             if ticks/time < IDEAL_TPS || is_key_down(KeyCode::Escape){ break; }
         }
