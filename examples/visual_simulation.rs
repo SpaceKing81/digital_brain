@@ -27,7 +27,7 @@ async fn main() {
     let mut ticks = 0.0;
     let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
 
-    for i in 0..1 {
+    loop {
     let (
         mut brain, 
         mut inputs, 
@@ -40,7 +40,7 @@ async fn main() {
     println!("Brain initialized. Thinking...");
     
     // Main loop
-    for i in 0..1 {
+    loop {
         // Handle Ending
         if is_key_down(KeyCode::Escape) {
             println!("Terminating Brain...");
@@ -49,14 +49,20 @@ async fn main() {
         }
 
         // Update the brain
-        loop {
+        for i in 0..(29) {
+            /*
+            debug notes:
+            - cannot go over 29 thoughts per simulation tick without crashing. For some reason.
+             */
             // let fire = (modulo(get_time(),5.0)) as i32 == 0;
             let fire = if (!is_key_down(KeyCode::S) && (ticks%15.0 == 0.0)) || is_key_down(KeyCode::F) { true } else { false };
             // let fire = get_time() >= 10.0 && get_time() <= 11.0;
+            if fire {
 
-            brain.tick(Some(5));
+            }
+            brain.tick(Some(1));
             let time = if get_time() == 0.0 {0.02} else {get_time()};
-            if ticks/time < IDEAL_TPS || is_key_down(KeyCode::Escape){ break; }
+            // if ticks/time < IDEAL_TPS || is_key_down(KeyCode::Escape){ break; }
         }
         // Drawing a frame
         { 
@@ -68,7 +74,7 @@ async fn main() {
         brain.general_update(center);
         // Draw FPS and other info
         draw_text(
-            &format!("Node: {}, Edge: {}, TPS: {}, Crash Count {}", brain.neurons.len(), brain.axions.len(),(ticks/get_time()).round(), crash),
+            &format!("Node: {}, Edge: {}, TPS: {}, Crash Count {} | {}", brain.neurons.len(), brain.axions.len(),(ticks/get_time()).round(), crash, brain.clock),
             20.,
             20.,
             20.,

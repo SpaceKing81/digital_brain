@@ -14,7 +14,7 @@ use crate::{
 
 
 pub struct Brain {
-  clock:u128,
+  pub clock:u128,
 
   pub neurons: HashMap<u32, Neuron>,
   pub axions: HashMap<u128,Axion>,

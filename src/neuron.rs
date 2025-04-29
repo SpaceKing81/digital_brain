@@ -135,7 +135,7 @@ impl Neuron {
   pub fn check_to_kill(&self) -> bool {
     if self.is_output {return false}
     if self.happyness >= MAX_HAPPY_VALUE {return true}
-    if self.delta_t > INACTIVITY_DEATH_TIME {return true}
+    // if self.delta_t > INACTIVITY_DEATH_TIME {return true}
     false
   }
 }
