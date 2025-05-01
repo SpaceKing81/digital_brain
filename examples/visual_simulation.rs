@@ -13,10 +13,10 @@ fn window_conf() -> Conf {
 }
 
 
-const STARTING_NEURONS:u32 = 100;
+const STARTING_NEURONS:u32 = 5000;
 const STARTING_INPUTS:u128 = 10;
 const STARTING_OUTPUTS:u32 = 1;
-const IDEAL_TPS:f64 = 1.0;
+const IDEAL_TPS:f64 = 60.0;
 
 #[macroquad::main(window_conf)]
 async fn main() {
@@ -49,7 +49,7 @@ async fn main() {
         }
 
         // Update the brain
-        loop {
+        for i in 0..29 {
             /*
             debug notes:
             - cannot go over 29 thoughts per simulation tick without crashing. For some reason.
