@@ -2,7 +2,7 @@
 use macroquad::{rand, color::*};
 const INPUT_COLOR:Color = Color::new(0.5, 0.25, 0.0, 1.0);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Axion {
   pub id:u128, // personal id
   pub id_source:u32, // id of the signal activator
@@ -73,11 +73,6 @@ impl Axion {
 
   pub fn get_to_draw(&self) -> (u32, u32, Color) {
     if self.is_input {
-      let color = match self.strength {
-        s if s > 0 => GREEN, // Green for excitatory
-        s if s < 0 => RED, // Red for inhibitory
-        _ => GRAY, // Gray for neutral
-      };
       return (0, self.id_sink, INPUT_COLOR);
     }
     

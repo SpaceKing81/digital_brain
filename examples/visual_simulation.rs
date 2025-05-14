@@ -13,7 +13,7 @@ fn window_conf() -> Conf {
 }
 
 
-const STARTING_NEURONS:u32 = 1000;
+const STARTING_NEURONS:u32 = 500;
 const STARTING_INPUTS:u128 = 10;
 const STARTING_OUTPUTS:u32 = 1;
 const IDEAL_TPS:f64 = 60.0;
@@ -37,7 +37,6 @@ async fn main() {
         STARTING_INPUTS, 
         STARTING_OUTPUTS
     );
-    println!("Brain initialized. Thinking...");
     
     // Main loop
     loop {

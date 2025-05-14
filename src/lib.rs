@@ -2,17 +2,35 @@ pub mod brain;
 mod axion;
 mod consts;
 mod grid;
-mod input;
 mod neuron;
-mod output;
 
 // re-export your main Brain type at the crate root:
 pub use brain::Brain;
 
-
+#[cfg(test)]
+mod tests {
+  use crate::brain::Brain;
+  use crate::neuron::Neuron;
+  use crate::axion::Axion;
+  use crate::consts::*;
+  use crate::grid::*;
 
 #[test]
-fn test_placeholder() {
-  // assert_eq!(true, false);
-  assert_eq!(true, true);
+  fn neuron_position() {
+    let neuron = Neuron::new(false);
+
+
+  }
+  #[test]
+  fn test_placeholder1() {}
+  #[test]
+  fn test_placeholder2() {}
+  #[test]
+  fn test_placeholder3() {}
+  #[test]
+  fn test_placeholder4() {}
+  #[test]
+  fn test_placeholder5() {}
+  #[test]
+  fn test_placeholder6() {}
 }

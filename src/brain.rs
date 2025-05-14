@@ -2,8 +2,7 @@ use std::collections::{HashMap, HashSet};
 // use rayon::prelude::*;
 use macroquad::{
   // color::*, 
-  math::Vec2, rand, shapes::*
-  // window::{screen_width,screen_height},
+  math::Vec2, rand, shapes::*, window::{screen_width,screen_height},
 };
 
 use crate::{
@@ -12,7 +11,7 @@ use crate::{
   //
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Brain {
   pub clock:u128,
 
@@ -95,6 +94,7 @@ impl Brain {
         input_ids.push(brain.add_input(sink_id));
       }
     }
+    println!("Brain initialized. Thinking...");
     (brain, input_ids, output_ids)
   }
   
@@ -157,6 +157,52 @@ impl Brain {
   output
   }
   
+  pub fn brain_input(&mut self, inputs:Option<Vec<u128>>) {}
+
+}
+
+/// Mechanics
+impl Brain {
+  fn spring_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
+    if id1 != id2 {return None}
+    let pos1 = self.neurons[&id1].position;
+    let pos2 = self.neurons[&id2].position;
+    let distance_s = pos1.distance(pos2);
+
+    if distance_s > SPRING_NORMAL { 
+      let direction_s = (pos1 - pos2) / distance_s;
+      let spring = SPRING * distance_s;
+      return Some(spring * direction_s * TIME_STEP);
+    }
+    None
+  }
+  fn center_force(&self, id1:u32, center:Vec2) -> Option<Vec2> {
+    let pos1 = self.neurons[&id1].position;
+    let distance_g = pos1.distance(center);
+    if distance_g > GRAVITY_SUFRACE { 
+      let direction_g = (pos1 - center) / distance_g;
+      let gravity = GRAVITY * distance_g;
+      return Some(gravity * direction_g * TIME_STEP)
+    }
+  None
+  }
+  fn electric_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
+    if id1 == id2 {return None}
+    let pos1 = self.neurons[&id1].position;
+    let pos2 = self.neurons[&id2].position;
+    // Like-Charge Repulsion
+    let distance_e = pos1.distance(pos2);
+    if distance_e > ELECTRIC_SUFRACE { // Prevent division by zero
+      let direction_e = (pos1 - pos2) / distance_e;
+      let electric = COULOMB / (distance_e * distance_e);
+      return Some(electric * direction_e * TIME_STEP);
+    }
+    None
+  }
+}
+
+/// Graphics
+impl Brain {
   pub fn render(&mut self, center: Vec2) {
     let mut neurons_to_remove: Vec<u32> = Vec::new();
     let mut axions_to_remove: Vec<u128> = Vec::new();
@@ -208,79 +254,49 @@ impl Brain {
     }
   }
   
-  pub fn brain_input(&mut self, inputs:Option<Vec<u128>>) {}
-
-}
-
-/// Mechanics
-impl Brain {
-  fn spring_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
-    if id1 != id2 {return None}
-    let pos1 = self.neurons[&id1].position;
-    let pos2 = self.neurons[&id2].position;
-    let distance_s = pos1.distance(pos2);
-
-    if distance_s > SPRING_NORMAL { 
-      let direction_s = (pos1 - pos2) / distance_s;
-      let spring = SPRING * distance_s;
-      return Some(spring * direction_s * TIME_STEP);
-    }
-    None
-  }
-  fn center_force(&self, id1:u32, center:Vec2) -> Option<Vec2> {
-    let pos1 = self.neurons[&id1].position;
-    let distance_g = pos1.distance(center);
-    if distance_g > GRAVITY_SUFRACE { 
-      let direction_g = (pos1 - center) / distance_g;
-      let gravity = GRAVITY * distance_g;
-      return Some(gravity * direction_g * TIME_STEP)
-    }
-  None
-  }
-  fn electric_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
-    if id1 == id2 {return None}
-    let pos1 = self.neurons[&id1].position;
-    let pos2 = self.neurons[&id2].position;
-    // Like-Charge Repulsion
-    let distance_e = pos1.distance(pos2);
-    if distance_e > ELECTRIC_SUFRACE { // Prevent division by zero
-      let direction_e = (pos1 - pos2) / distance_e;
-      let electric = COULOMB / (distance_e * distance_e);
-      return Some(electric * direction_e * TIME_STEP);
-    }
-    None
-  }
-}
-
-/// Graphics
-impl Brain {
-  fn draw(&self) {
-    for axion in self.axions.values() {
-      self.draw_axion(axion);
-    }
-    // Draw neurons
-    for neuron in self.neurons.values() {
-      neuron.draw();
-    }
-}
-  
   fn draw_axion(&self, axion:&Axion) {
     let (source_id, sink_id, color) = axion.get_to_draw();
-      if let (Some(source), Some(sink)) = (
-        self.neurons.get(&source_id),
-        self.neurons.get(&sink_id),
-      ) {
-        draw_line(
-          source.position.x,
-          source.position.y,
-          sink.position.x,
-          sink.position.y,
-          2.0,
-          color,
-        );
+    let (source, sink) = (
+      self.neurons.get(&source_id),
+      self.neurons.get(&sink_id),
+    );
+    let mut x = 0.0;
+    let mut y = 0.0;
+    let mut sinkx = 0.0;
+    let mut sinky = 0.0;
+
+    if let Some(source_pos) = source {
+      x = source_pos.position.x;
+      y = source_pos.position.y;
+    }
+
+    if source_id == 0 {
+      let roll = rand::gen_range(0,4);
+      match roll {
+        0=>{x = screen_width(); y = screen_height()}
+        1=>{x = screen_width(); y = 0.0}
+        2=>{x = 0.0; y = screen_height()}
+        3=>{x = 0.0; y = 0.0}
+        _=> panic!("Rolled too high somehow, it done broke")
       }
+    }
+
+    if let Some(sink_pos) = sink {
+      sinkx = sink_pos.position.x;
+      sinky = sink_pos.position.y;
+    }
+
+    draw_line (
+      x,
+      y,
+      sinkx,
+      sinky,
+      2.0,
+      color,
+    );
   }
 }
+
 
 
 

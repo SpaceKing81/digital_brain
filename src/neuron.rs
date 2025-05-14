@@ -4,12 +4,12 @@ use macroquad::{
   window::{screen_width,screen_height},
 };
 use crate::consts::*;
-const OUTPUT_COLOR:Color = Color::new(0.0, 0.5, 1.0, 1.0);
+
 
 
 
 /// Single neuron
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Neuron {
   // id:u32, // name, basiclly
   pub position: Vec2, // Position on the screen
