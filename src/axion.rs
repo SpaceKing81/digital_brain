@@ -1,6 +1,8 @@
 // use crate::neuron::Neuron;
 use macroquad::{rand, color::*};
 const INPUT_COLOR:Color = Color::new(0.5, 0.25, 0.0, 1.0);
+
+#[derive(Clone, Debug)]
 pub struct Axion {
   pub id:u128, // personal id
   pub id_source:u32, // id of the signal activator

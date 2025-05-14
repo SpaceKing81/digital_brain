@@ -56,11 +56,11 @@ pub mod grid {
                         continue;
                     }
                                         
-                    let pos2:Vec2 = cell.total_position / cell.count;
+                    let pos2: Vec2 = cell.total_position / cell.count;
                     let dir_e = position - pos2;
-                    let distance:f32 = dir_e.length();
+                    let distance: f32 = (&dir_e).length();
                     
-                    if distance > ELECTRIC_SUFRACE {
+                    if distance > ELECTRIC_SUFRACE && !dir_e.is_nan() {
                         let repulsion_strength = COULOMB / distance.powi(2);
                         force += (dir_e.normalize() * repulsion_strength * TIME_STEP) * cell.count;
 

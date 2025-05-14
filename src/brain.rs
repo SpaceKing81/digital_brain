@@ -12,7 +12,7 @@ use crate::{
   //
 };
 
-
+#[derive(Debug)]
 pub struct Brain {
   pub clock:u128,
 
@@ -26,7 +26,7 @@ pub struct Brain {
 
   active_neurons:HashSet<u32>,
 }
- 
+
 impl Brain {
   fn new() -> Self {
     Brain {
@@ -97,6 +97,7 @@ impl Brain {
     }
     (brain, input_ids, output_ids)
   }
+  
   /// Ticks over the brain simulation for however many specified ticks, with a default of 1 iteration.
   /// No input, however all the output id's are collected and output at the end
   pub fn tick(&mut self, num_iterations:Option<u32>) -> Vec<u32> {
@@ -156,9 +157,9 @@ impl Brain {
   output
   }
   
-  pub fn general_update(&mut self, center: Vec2) {
+  pub fn render(&mut self, center: Vec2) {
     let mut neurons_to_remove: Vec<u32> = Vec::new();
-    let mut axions_to_remove = Vec::new();
+    let mut axions_to_remove: Vec<u128> = Vec::new();
 
     // Step 1: build grid
     let grid = GridCell::build_spatial_grid(&self.neurons);
@@ -180,7 +181,7 @@ impl Brain {
         if let Some(neuron) = self.neurons.get_mut(&neuron_changes.id) {
           if neuron.check_to_kill() {
             neurons_to_remove.push(neuron_changes.id);
-            return;
+            continue;
           }
           neuron.position = neuron_changes.new_position;
           neuron.update(self.clock);
@@ -207,6 +208,7 @@ impl Brain {
     }
   }
   
+  pub fn brain_input(&mut self, inputs:Option<Vec<u128>>) {}
 
 }
 

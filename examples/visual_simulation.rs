@@ -13,7 +13,7 @@ fn window_conf() -> Conf {
 }
 
 
-const STARTING_NEURONS:u32 = 5000;
+const STARTING_NEURONS:u32 = 1000;
 const STARTING_INPUTS:u128 = 10;
 const STARTING_OUTPUTS:u32 = 1;
 const IDEAL_TPS:f64 = 60.0;
@@ -49,18 +49,13 @@ async fn main() {
         }
 
         // Update the brain
-        for i in 0..29 {
+        loop {
             /*
             debug notes:
             - cannot go over 29 thoughts per simulation tick without crashing. For some reason.
              */
-            // let fire = (modulo(get_time(),5.0)) as i32 == 0;
-            let fire = if (!is_key_down(KeyCode::S) && (ticks%15.0 == 0.0)) || is_key_down(KeyCode::F) { true } else { false };
-            // let fire = get_time() >= 10.0 && get_time() <= 11.0;
-            if fire {
-
-            }
-            brain.tick(Some(1));
+           
+            brain.tick(None);
             let time = if get_time() == 0.0 {0.02} else {get_time()};
             if ticks/time < IDEAL_TPS || is_key_down(KeyCode::Escape){ break; }
         }
@@ -71,7 +66,7 @@ async fn main() {
         clear_background(BLACK);
 
         // Update and draw neurons and axons
-        brain.general_update(center);
+        brain.render(center);
         // Draw FPS and other info
         draw_text(
             &format!("Node: {}, Edge: {}, TPS: {}, Crash Count {} | {}", brain.neurons.len(), brain.axions.len(),(ticks/get_time()).round(), crash, brain.clock),

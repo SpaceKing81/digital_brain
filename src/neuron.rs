@@ -9,7 +9,7 @@ const OUTPUT_COLOR:Color = Color::new(0.0, 0.5, 1.0, 1.0);
 
 
 /// Single neuron
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Neuron {
   // id:u32, // name, basiclly
   pub position: Vec2, // Position on the screen
@@ -115,7 +115,7 @@ impl Neuron {
 
 // Graphics
 impl Neuron {
-  /// Draws the Neuron where ever it is, gives it a color based on its firing status
+  /// Draws the Neuron where ever it is, gives it a color based on its firing status + output
   pub fn draw(&self) {
     if self.is_output { draw_circle(self.position.x, self.position.y, 10.0, OUTPUT_COLOR); return;}
     let color = if self.delta_t == 0 {RED} else if self.delta_t < 5 {YELLOW} else {GRAY};
