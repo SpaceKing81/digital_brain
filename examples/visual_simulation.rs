@@ -26,7 +26,6 @@ async fn main() {
     let mut crash = 0;
     let mut ticks = 0.0;
     let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
-
     loop {
     let (
         mut brain, 

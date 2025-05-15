@@ -65,8 +65,8 @@ impl Brain {
 
     // Step 2: Connect neurons with axions
     for _ in 0..(num_neurons * 2) {
-      let source_id = neuron_ids[rand::gen_range(0, len)];
-      let sink_id = neuron_ids[rand::gen_range(0, len)];
+      let source_id = neuron_ids[rand::gen_range(1, len)];
+      let sink_id = neuron_ids[rand::gen_range(1, len)];
       
       if output_ids.contains(&source_id) && !output_ids.contains(&sink_id) {
         brain.add_axion(sink_id,source_id);
@@ -89,8 +89,8 @@ impl Brain {
     // Step 3: Add + Configure Inputs
     let mut input_ids = Vec::new();
     while brain.input_ids.len() < num_input as usize {
-      let sink_id = neuron_ids[rand::gen_range(0, len)];
-      if !output_ids.contains(&sink_id) {
+      let sink_id = neuron_ids[rand::gen_range(0, neuron_ids.len())];
+      if !output_ids.contains(&sink_id) || brain.neurons.contains_key(&sink_id) {
         input_ids.push(brain.add_input(sink_id));
       }
     }
