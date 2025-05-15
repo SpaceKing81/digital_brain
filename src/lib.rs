@@ -9,11 +9,6 @@ pub use brain::Brain;
 
 #[cfg(test)]
 mod tests {
-  use crate::brain::Brain;
-  use crate::neuron::Neuron;
-  use crate::axion::Axion;
-  use crate::consts::*;
-  use crate::grid::*;
 
 #[test]
   fn neuron_position() {}

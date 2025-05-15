@@ -16,7 +16,7 @@ fn window_conf() -> Conf {
 const STARTING_NEURONS:u32 = 100;
 const STARTING_INPUTS:u128 = 27;
 const STARTING_OUTPUTS:u32 = 27;
-const IDEAL_TPS:f64 = 60.0;
+// const IDEAL_TPS:f64 = 60.0;
 
 #[macroquad::main(window_conf)]
 async fn main() {
@@ -30,8 +30,8 @@ async fn main() {
     loop {
     let (
         mut brain, 
-        mut inputs, 
-        mut outputs
+        _inputs, 
+        _outputs
     ) = Brain::spin_up_new(
         STARTING_NEURONS,
         STARTING_INPUTS, 

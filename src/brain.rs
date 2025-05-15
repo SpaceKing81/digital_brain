@@ -157,7 +157,7 @@ impl Brain {
   output
   }
   
-  pub fn brain_input(&mut self, inputs:Option<Vec<u128>>) {}
+  pub fn brain_input(&mut self, inputs:Option<Vec<u128>>) {drop(inputs); todo!()}
 
 }
 
@@ -301,7 +301,7 @@ impl Brain {
       if neuron.is_output {return;}
       if let Some(roll) = neuron.roll_save_check(false) {
           // Create new connections
-          for _ in 0..rand::gen_range(5,10) {
+          for _ in 0..roll {
             let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
             if sink_id != neuron_id {
               self.add_axion(neuron_id, sink_id);
@@ -318,7 +318,7 @@ impl Brain {
       let save = if neuron.is_output {neuron.roll_save_check(true)} else {neuron.roll_save_check(false)};
       if let Some(roll) = save {
           // Create new connections
-          for _ in 0..rand::gen_range(5,10) {
+          for _ in 0..roll {
             let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
             if sink_id != neuron_id {
               self.add_axion(neuron_id, sink_id);
@@ -379,7 +379,7 @@ impl Brain {
   fn remove_neuron(&mut self, neuron_id: u32) {
       if let Some(neuron) = self.neurons.remove(&neuron_id) {
           // Remove all input axons
-          self.num_of_neurons.saturating_sub(1);
+          self.num_of_neurons = self.num_of_neurons.saturating_sub(1);
           for axion_id in neuron.input_axions {
               self.remove_axion(axion_id);
           }
@@ -392,7 +392,7 @@ impl Brain {
   fn remove_axion(&mut self, axion_id: u128) {
     if let Some(axion) = self.axions.remove(&axion_id) {
       // Remove axon from source neuron's output list
-      self.num_of_axions.saturating_sub(1);
+      self.num_of_axions = self.num_of_axions.saturating_sub(1);
       if let Some(source_neuron) = self.neurons.get_mut(&axion.id_source) {
         source_neuron.output_axions.retain(|&id| id != axion_id);
       }
