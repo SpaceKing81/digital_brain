@@ -117,6 +117,7 @@ impl Neuron {
 impl Neuron {
   /// Draws the Neuron where ever it is, gives it a color based on its firing status + output
   pub fn draw(&self) {
+    if self.position.is_nan() {print!(" Caught! ")}
     if self.is_output { draw_circle(self.position.x, self.position.y, 10.0, OUTPUT_COLOR); return;}
     let color = if self.delta_t == 0 {RED} else if self.delta_t < 5 {YELLOW} else {GRAY};
     draw_circle(self.position.x, self.position.y, 10.0, color);
