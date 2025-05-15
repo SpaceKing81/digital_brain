@@ -1,6 +1,7 @@
 // use crate::neuron::Neuron;
-use macroquad::{rand, color::*};
-const INPUT_COLOR:Color = Color::new(0.5, 0.25, 0.0, 1.0);
+use macroquad::{rand, color::{Color,GRAY}};
+
+use crate::consts::{AXION_INPUT_COLOR, AXION_POS_COLOR, AXION_NEG_COLOR};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Axion {
@@ -73,15 +74,15 @@ impl Axion {
 
   pub fn get_to_draw(&self) -> (u32, u32, Color) {
     if self.is_input {
-      return (0, self.id_sink, INPUT_COLOR);
+      return (0, self.id_sink, AXION_INPUT_COLOR);
     }
     
     let (source, sink) = (
       self.id_source, self.id_sink
     );
     let color = match self.strength {
-      s if s > 0 => GREEN, // Green for excitatory
-      s if s < 0 => RED, // Red for inhibitory
+      s if s > 0 => AXION_POS_COLOR, // Green for excitatory
+      s if s < 0 => AXION_NEG_COLOR, // Red for inhibitory
       _ => GRAY, // Gray for TB Killed
     };
     (source, sink, color)

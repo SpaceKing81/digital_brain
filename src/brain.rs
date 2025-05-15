@@ -182,23 +182,23 @@ impl Brain {
     if distance_g > GRAVITY_SUFRACE { 
       let direction_g = (pos1 - center) / distance_g;
       let gravity = GRAVITY * distance_g;
-      return Some(gravity * direction_g * TIME_STEP)
+      return Some(gravity * direction_g * TIME_STEP);
     }
   None
   }
-  fn electric_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
-    if id1 == id2 {return None}
-    let pos1 = self.neurons[&id1].position;
-    let pos2 = self.neurons[&id2].position;
-    // Like-Charge Repulsion
-    let distance_e = pos1.distance(pos2);
-    if distance_e > ELECTRIC_SUFRACE { // Prevent division by zero
-      let direction_e = (pos1 - pos2) / distance_e;
-      let electric = COULOMB / (distance_e * distance_e);
-      return Some(electric * direction_e * TIME_STEP);
-    }
-    None
-  }
+  // fn electric_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
+  //   if id1 == id2 {return None}
+  //   let pos1 = self.neurons[&id1].position;
+  //   let pos2 = self.neurons[&id2].position;
+  //   // Like-Charge Repulsion
+  //   let distance_e = pos1.distance(pos2);
+  //   if distance_e > ELECTRIC_SUFRACE { // Prevent division by zero
+  //     let direction_e = (pos1 - pos2) / distance_e;
+  //     let electric = COULOMB / (distance_e * distance_e);
+  //     return Some(electric * direction_e * TIME_STEP);
+  //   }
+  //   None
+  // }
 }
 
 /// Graphics
@@ -271,14 +271,7 @@ impl Brain {
     }
 
     if source_id == 0 {
-      let roll = rand::gen_range(0,4);
-      match roll {
-        0=>{x = screen_width(); y = screen_height()}
-        1=>{x = screen_width(); y = 0.0}
-        2=>{x = 0.0; y = screen_height()}
-        3=>{x = 0.0; y = 0.0}
-        _=> panic!("Rolled too high somehow, it done broke")
-      }
+     x = screen_width()/2.0; y = screen_height()
     }
 
     if let Some(sink_pos) = sink {
@@ -338,11 +331,6 @@ impl Brain {
     }
   }
   
-  fn combine_axions(input_axions: &Vec<u128>, output_axions: &Vec<u128>) -> HashSet<u128> {
-    input_axions.iter().copied().chain(output_axions.iter().copied()).collect()
-}
-
-
   fn add_neuron(&mut self) -> u32 {
     self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID

@@ -16,10 +16,10 @@ pub mod grid {
     impl GridCell {
         pub fn build_spatial_grid(neurons: &HashMap<u32, Neuron>) -> HashMap<(i32,i32), GridCell> {
             // Concurrently accumulate into a DashMap
-            let grid = DashMap::new();
+            let grid: DashMap<(i32, i32), GridCell> = DashMap::new();
         
             neurons.par_iter().for_each(|(_, neuron)| {
-                let pos = neuron.position;
+                let pos = if neuron.position.is_nan() {Vec2::ZERO} else {neuron.position};
                 let key = (
                     (pos.x / GRID_SIZE).floor() as i32,
                     (pos.y / GRID_SIZE).floor() as i32,
@@ -40,36 +40,37 @@ pub mod grid {
             // Convert back to a regular HashMap
             grid.into_iter().collect()
         }
-    pub fn compute_repulsion_from_grid(
-        position: Vec2,
-        grid_key: (i32, i32),
-        grid: &HashMap<(i32, i32), GridCell>,
-    ) -> Vec2 {
-        let mut force = Vec2::ZERO;
+        pub fn compute_repulsion_from_grid(
+            position: Vec2,
+            grid_key: (i32, i32),
+            grid: &HashMap<(i32, i32), GridCell>,
+        ) -> Option<Vec2> {
+        let mut pos1 = Vec2::ZERO;
+        if position.is_nan() {pos1 = position}
 
         for dx in -2..=2 {
             for dy in -2..=2 {
                 let neighbor_key = (grid_key.0 + dx, grid_key.1 + dy);
 
                 if let Some(cell) = grid.get(&neighbor_key) {
+                    let cell:&GridCell = cell;
                     if cell.count.floor() == 0.0 {
+                        // ignore if nothing in that cell
                         continue;
                     }
-                                        
-                    let pos2: Vec2 = cell.total_position / cell.count;
-                    let dir_e = position - pos2;
-                    let distance: f32 = (&dir_e).length();
-                    
-                    if distance > ELECTRIC_SUFRACE && !dir_e.is_nan() {
-                        let repulsion_strength = COULOMB / distance.powi(2);
-                        force += (dir_e.normalize() * repulsion_strength * TIME_STEP) * cell.count;
 
-                    } // Prevent division by zero
+                    let pos2 = cell.total_position/cell.count.floor();
+                    // Like-Charge Repulsion
+                    let distance_e = pos1.distance(pos2);
+                    if distance_e > ELECTRIC_SUFRACE { // Prevent division by zero or NaN
+                        let direction_e = (pos1 - pos2) / distance_e;
+                        let electric = COULOMB / distance_e.powi(2);
+                        return Some(electric * direction_e * TIME_STEP);
+                    }
                 }
             }
         }
-
-        force
+        None
     }
 
 }
@@ -122,15 +123,18 @@ pub mod update_threads {
                 .map(|(id, neuron)| {
                     let mut total_force = Vec2::ZERO;
                     // center force
-                    total_force -= center_force_fn(id, center).unwrap_or_default();
+                    let center_force:Vec2 = center_force_fn(id, center).unwrap_or_default();
+                    total_force -= center_force;
                     // repulsion
                     let key = (
                         (neuron.position.x / GRID_SIZE).floor() as i32,
                         (neuron.position.y / GRID_SIZE).floor() as i32,
                     );
-                    total_force += GridCell::compute_repulsion_from_grid(
+                    let repulse_force:Vec2 = GridCell::compute_repulsion_from_grid(
                         neuron.position, key, grid
-                    );
+                    )
+                    .unwrap_or_default();
+                    total_force += repulse_force;
 
                     // collect axion updates locally
                     let mut local_axions = Vec::new();

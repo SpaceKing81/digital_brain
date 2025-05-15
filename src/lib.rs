@@ -16,11 +16,7 @@ mod tests {
   use crate::grid::*;
 
 #[test]
-  fn neuron_position() {
-    let neuron = Neuron::new(false);
-
-
-  }
+  fn neuron_position() {}
   #[test]
   fn test_placeholder1() {}
   #[test]
