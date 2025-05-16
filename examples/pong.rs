@@ -1,3 +1,5 @@
+use std::sync::RwLockWriteGuard;
+
 use macroquad::{input, prelude::*, rand::rand};
 use digital_brain::Brain;
 
@@ -12,11 +14,12 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let mut game = PongGame::new(5, vec![0,1,2]);
-  game.current_frame.set(4, 4, true);
-  game.current_frame.set(0, 0, true);
-  game.current_frame.set(4, 0, true);
-  game.current_frame.set(0, 4, true);
+  let (mut brain,inputs, outputs) = Brain::spin_up_new(1500, 25, 2);
+  let mut game = PongGame::new(5, inputs);
+  
+  let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();
+  brain.brain_input(initial_pos);
+
   // Main loop
   loop {
     // Handle Ending
@@ -24,15 +27,21 @@ async fn main() {
       println!("Terminating");
       break;
     }
+    // Brain thinking
+    let outputs = brain.tick(Some(29));
+    let direction = Move::output_to_moves(outputs);
     // Drawing a frame
     { 
-
+    
     // Clear the screen
     clear_background(BLACK);
-    
+
+
+    game.progress_frame(direction);
     // Draw Game
     game.draw();
-    
+    brain.brain_input(game.frame_to_inputs());
+
     // Draw FPS and other info
     // draw_text(
     //   &format!("Hello world"),
@@ -83,7 +92,6 @@ matrix
     self.data[row * self.cols + col] = input;
     Ok(())
   }
-  pub fn shrink(&mut self) -> Result<(),String> {Ok(())}
 
 }
 
@@ -144,11 +152,16 @@ impl PongGame {
       bottom_right: Vec2::new(edge, edge),
     }
   }
-  fn progress_frame(&mut self, direction:(Move,usize)) -> Result<(),String> {
-    for i in 0..direction.1 {
-      self.move_paddle(direction.0);
-    } 
-    todo!();
+  fn progress_frame(&mut self, direction:(Move,usize)) {
+    self.move_paddle(direction);
+    let (row,col) = self.check_ball_pos();
+    if (row + 1) == self.current_frame.rows || row == 0 {
+      self.ball.bounce_top_bottom();
+    }
+    if (col + 1) == self.current_frame.cols || row == 0 {
+      self.ball.bounce_left_right();
+    }
+    self.ball.forward();
   }
   fn shift_paddle(&mut self, direction:(Move,usize)) {todo!();}
   fn move_ball(&mut self) {todo!();}
@@ -161,8 +174,9 @@ impl PongGame {
           draw_rectangle((xcell as f32) * length, (ycell as f32) * length, length, length, color);
         }}}
   }
-  fn frame_to_inputs(&self) -> Vec<(u128,i32)> {todo!();}
-  fn move_paddle(&mut self, shift:Move) {}
+  fn frame_to_inputs(&self) -> Option<Vec<(u128,i32)>> {todo!();}
+  fn move_paddle(&mut self, direction:(Move,usize)) {}
+  fn check_ball_pos(&self) -> (usize,usize) {todo!()}
 }
 
 fn pixle_size_calculator(game_size:usize) -> f32 {
