@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 // use std::collections::HashMap;
 use macroquad::{
   color::*, math::Vec2, rand, shapes::*,
@@ -134,10 +136,18 @@ impl Neuron {
     potential.abs() >= self.threshold
   } 
   /// Checks if the neuron should be killed
-  pub fn check_to_kill(&self) -> bool {
+  pub fn check_to_kill(&self, has_input: bool) -> bool {
+    if has_input {return false}
     if self.is_output {return false}
     if self.happyness >= MAX_HAPPY_VALUE {return true}
     // if self.delta_t > INACTIVITY_DEATH_TIME {return true}
+    false
+  }
+
+  pub fn has_input(&self, input_ids: &HashSet<u128>) -> bool {
+    for &i in &self.input_axions {
+      if input_ids.contains(&i) {return true}
+    }
     false
   }
 }

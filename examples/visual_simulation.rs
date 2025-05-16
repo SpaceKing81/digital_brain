@@ -23,10 +23,8 @@ async fn main() {
     
     // Initialize the brain
     println!("Starting simulation...");
-    let mut crash = 0;
     let mut ticks = 0.0;
     let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
-    loop {
     let (
         mut brain, 
         _inputs, 
@@ -42,7 +40,6 @@ async fn main() {
         // Handle Ending
         if is_key_down(KeyCode::Escape) {
             println!("Terminating Brain...");
-            crash = 4;
             break;
         }
 
@@ -66,21 +63,17 @@ async fn main() {
         brain.render(center);
         // Draw FPS and other info
         draw_text(
-            &format!("Node: {}, Edge: {}, TPS: {}, Crash Count {} | {}", brain.neurons.len(), brain.axions.len(),(ticks/get_time()).round(), crash, brain.clock),
+            &format!("TPS: {}, Clock {}",(ticks/get_time()).round(), brain.clock),
             20.,
             20.,
             20.,
             WHITE,
         );
         ticks += 1.0;
-        if brain.neurons.len() == 0 || brain.axions.len() == 0 { break; };
         }
         // Render the frame
         next_frame().await;
     }
-    crash += 1;
-    if crash == 5 {break;}
-}
 }
 
 

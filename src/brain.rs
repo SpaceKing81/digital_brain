@@ -7,7 +7,7 @@ use macroquad::{
 
 use crate::{
   //
-  axion::Axion, neuron::Neuron, internal_consts::*, consts::*, grid::{grid::*, update_threads::*}
+  axion::Axion, neuron::Neuron, internal_consts::*, grid::{grid::*, update_threads::*}
   //
 };
 
@@ -113,11 +113,15 @@ impl Brain {
       let mut neurons_to_remove= Vec::new();
 
       for neuron_id in active_neurons_to_iter {
+        let mut has_input = false;
         if let Some(neuron) = self.neurons.get_mut(&neuron_id) {
           // update the input neuron happyness
           let input_axions = neuron.input_axions.clone();
           let happyness = neuron.happyness;
           for axion_id in input_axions {
+            // Checks to see if there are any inputs to this neuron
+            if self.input_ids.contains(&axion_id) {has_input = true}
+
             if let Some(axion) = self.axions.get_mut(&axion_id) {
               axion.update_happyness(happyness);
             }
@@ -125,7 +129,7 @@ impl Brain {
           // update the neurons
           neuron.update(self.clock);
           // Check if it should die
-          if neuron.check_to_kill() {neurons_to_remove.push(neuron_id)}
+          if neuron.check_to_kill(has_input) {neurons_to_remove.push(neuron_id)}
           // check if it should fire
           if neuron.ready_to_fire() {
             let delta_t = neuron.fired();
@@ -158,7 +162,7 @@ impl Brain {
   
   pub fn brain_input(&mut self, inputs:Option<Vec<(u128, i32)>>) {
     // Check if theres something in it
-    if inputs.is_none() {return;}
+    if inputs.is_none() {return}
 
     for (input_id, strength) in inputs.unwrap() {
       // Check that it exists
@@ -177,8 +181,6 @@ impl Brain {
 
         } else { panic!("Library Error: Input axion not connected to a present neuron") }
       } else { panic!("Library Error: Input axion not in axion list") }
-
-
     }
   }
 
@@ -250,7 +252,7 @@ impl Brain {
     // Step 3: apply calculated changes normally for both
     for neuron_changes in neuron_updates {
         if let Some(neuron) = self.neurons.get_mut(&neuron_changes.id) {
-          if neuron.check_to_kill() {
+          if neuron.check_to_kill(neuron.has_input(&self.input_ids)) {
             neurons_to_remove.push(neuron_changes.id);
             continue;
           }
