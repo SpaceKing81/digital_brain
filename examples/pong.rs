@@ -1,6 +1,4 @@
-use std::sync::RwLockWriteGuard;
-
-use macroquad::{input, prelude::*, rand::rand};
+use macroquad::{prelude::*};
 use digital_brain::Brain;
 use digital_brain::MAX_THRESHOLD;
 
@@ -30,7 +28,7 @@ async fn main() {
     }
     // Brain thinking
     let outputs = brain.tick(Some(29));
-    let direction = Move::output_to_moves(outputs);
+    let direction = game.output_to_moves(outputs);
     // Drawing a frame
     { 
     
@@ -38,7 +36,11 @@ async fn main() {
     clear_background(BLACK);
 
 
-    game.progress_frame(direction);
+    match game.progress_frame(direction) {
+      Reward::Pain => {brain.pain(None);},
+      Reward::Plesure => {brain.reward(None);},
+      Reward::Null => {continue;},
+    }
     // Draw Game
     game.draw();
     brain.brain_input(game.frame_to_inputs());
@@ -100,6 +102,7 @@ struct PongGame {
   current_frame:Matrix<bool>,
   input_list:Vec<u128>,
   ball:Ball,
+  paddle_row:usize,
   score:usize,
   pixle_size:f32,
   bottom_right:Vec2,
@@ -114,10 +117,12 @@ enum Move {
   Down,
   None,
 }
-
-impl Move {
-  fn output_to_moves(outputs:Vec<u32>) -> (Self, usize) {todo!();}
+enum Reward {
+  Null,
+  Pain,
+  Plesure,
 }
+
 
 
 impl Ball {
@@ -148,21 +153,27 @@ impl PongGame {
       current_frame: Matrix::new(game_size, false), 
       input_list, 
       ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }), 
+      paddle_row:0,
       score: 0, 
       pixle_size: pixle_size_calculator(game_size),
       bottom_right: Vec2::new(edge, edge),
     }
   }
-  fn progress_frame(&mut self, direction:(Move,usize)) {
+  fn progress_frame(&mut self, direction:(Move,usize)) -> Reward {
+    let mut score = Reward::Null;
     self.move_paddle(direction);
     let (row,col) = self.check_ball_pos();
+    if self.ball_hit_paddle(row, col) {self.ball.bounce_left_right(); score = Reward::Plesure}
     if (row + 1) == self.current_frame.rows || row == 0 {
       self.ball.bounce_top_bottom();
     }
     if (col + 1) == self.current_frame.cols || row == 0 {
       self.ball.bounce_left_right();
     }
+    if col == 0 { self.score +=1; score = Reward::Pain; }
     self.ball.forward();
+    
+    score
   }
   fn shift_paddle(&mut self, direction:(Move,usize)) {todo!();}
   fn move_ball(&mut self) {todo!();}
@@ -178,17 +189,69 @@ impl PongGame {
   fn frame_to_inputs(&self) -> Option<Vec<(u128,i32)>> {
     let current_data: &Vec<bool> = &self.current_frame.data;
     let inputs: &Vec<u128> = &self.input_list;
+    if current_data.len() != inputs.len() { panic!("The input-length and data length are different sizes") }
     let mut outputs:Vec<(u128,i32)> = Vec::new();
     for idx in 0..inputs.len() {
-      outputs.push((
-        inputs[idx],
-        MAX_THRESHOLD
-      ));
+      if current_data[idx] { 
+        outputs.push((
+          inputs[idx],
+          MAX_THRESHOLD
+        ));
+      }
     }
-    todo!();
+    if outputs.is_empty() {return None;}
+    Some(outputs)
   }
-  fn move_paddle(&mut self, direction:(Move,usize)) {}
+  fn move_paddle(&mut self, direction:(Move,usize)) {
+    match direction.0 {
+      Move::Down => {
+        if let Ok(_) = self.current_frame.set(
+          self.paddle_row + direction.1 + 1, 
+          0, 
+          true
+        ) {
+          // If this is a valid place on the map, then:
+          self.current_frame.set(
+            self.paddle_row + direction.1, 
+            0, 
+            true
+          ).unwrap_or_default();
+          self.paddle_row = self.paddle_row + direction.1
+
+        } else { 
+          self.current_frame.set(
+            self.current_frame.rows - 1, 
+            0, 
+            true).unwrap_or_default(); 
+          self.current_frame.set(
+            self.paddle_row + direction.1 - 2, 
+            0, 
+            true
+          ).unwrap_or_default();
+          self.paddle_row = self.current_frame.rows - 1;                                   
+        }
+      },
+      Move::Up => {
+        if let Ok(_) = self.current_frame.set(
+          self.paddle_row.saturating_sub(direction.1),
+          0, 
+          true
+        ) {
+          // If this is a valid place on the map (and it should be always)
+          self.current_frame.set(
+            self.paddle_row.saturating_sub(direction.1),
+            0, 
+            true
+          ).unwrap_or_default();
+
+        } else {unreachable!("Somehow, the matrix doesn't have a (0,0) cord?")}
+      },
+      Move::None => return,
+    }
+  }
   fn check_ball_pos(&self) -> (usize,usize) {todo!()}
+  fn ball_hit_paddle(&self, row:usize, col:usize) -> bool {todo!();}
+  fn output_to_moves(&self, output:Vec<u32>) -> (Move,usize) {todo!();}
 }
 
 fn pixle_size_calculator(game_size:usize) -> f32 {

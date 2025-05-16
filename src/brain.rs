@@ -15,10 +15,10 @@ use crate::{
 pub struct Brain {
   pub clock:u128,
 
-  pub neurons: HashMap<u32, Neuron>,
-  pub axions: HashMap<u128,Axion>,
-  pub output_ids: HashSet<u32>,
-  pub input_ids: HashSet<u128>,
+  neurons: HashMap<u32, Neuron>,
+  axions: HashMap<u128,Axion>,
+  output_ids: HashSet<u32>,
+  input_ids: HashSet<u128>,
 
   num_of_neurons: u32,
   num_of_axions: u128,
@@ -182,6 +182,8 @@ impl Brain {
     }
   }
 
+  pub fn reward(&mut self, intensity:Option<u32>) {todo!();}
+  pub fn pain(&mut self, intensity:Option<u32>) {todo!();}
 }
 
 /// Mechanics
