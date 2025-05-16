@@ -147,7 +147,7 @@ impl Ball {
 
 impl PongGame {
   fn new(game_size:usize, input_list: Vec<u128>, output_list:Vec<u32>) -> Self {
-    PongGame { 
+    let mut new = PongGame { 
       current_frame: Matrix::new(game_size, false), 
       input_list, 
       output_list,
@@ -155,7 +155,13 @@ impl PongGame {
       paddle_row:0,
       score: 0, 
       pixle_size: pixle_size_calculator(game_size),
+    };
+    let (row, col) = new.get_ball_pos();
+    new.current_frame.set(row, col, true).unwrap_or_default();
+    for i in 0..1 {
+      new.current_frame.set(i,0, true).unwrap_or_default();
     }
+    new
   }
   fn progress_frame(&mut self, direction:(Move,usize)) -> Reward {
     let mut score = Reward::Null;

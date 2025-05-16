@@ -182,8 +182,8 @@ impl Brain {
     }
   }
 
-  pub fn reward(&mut self, intensity:Option<u32>) {todo!();}
-  pub fn pain(&mut self, intensity:Option<u32>) {todo!();}
+  pub fn reward(&mut self, intensity:Option<u32>) {return}
+  pub fn pain(&mut self, intensity:Option<u32>) {return}
 }
 
 /// Mechanics
@@ -391,15 +391,14 @@ impl Brain {
   fn add_input(&mut self, sink_id:u32) -> u128 {
     self.num_of_axions +=1;
     let id = self.axions.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    let mut input = Axion::new(0,sink_id, id, true);
-    input.strength = MAX_THRESHOLD as i32;
+    let input = Axion::new(0,sink_id, id, true);
     self.axions.insert(id, input);
 
     // Update neuron connections
     if let Some(sink_neuron) = self.neurons.get_mut(&sink_id) {
       sink_neuron.input_axions.push(id);
     }
-
+    // Put it in the brain
     self.input_ids.insert(id);
     id
   }
