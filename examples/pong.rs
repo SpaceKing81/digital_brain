@@ -14,7 +14,7 @@ fn window_conf() -> Conf {
 async fn main() {
   println!("Starting simulation...");
   let (mut brain,inputs, outputs) = Brain::spin_up_new(1500, 25, 2);
-  let mut game = PongGame::new(5, inputs);
+  let mut game = PongGame::new(5, inputs, outputs);
   
   let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();
   brain.brain_input(initial_pos);
@@ -101,11 +101,11 @@ matrix
 struct PongGame {
   current_frame:Matrix<bool>,
   input_list:Vec<u128>,
+  output_list:Vec<u32>,
   ball:Ball,
   paddle_row:usize,
   score:usize,
   pixle_size:f32,
-  bottom_right:Vec2,
 }
 struct Ball {
   pos:Vec2,
@@ -122,7 +122,6 @@ enum Reward {
   Pain,
   Plesure,
 }
-
 
 
 impl Ball {
@@ -147,22 +146,21 @@ impl Ball {
 }
 
 impl PongGame {
-  fn new(game_size:usize, input_list: Vec<u128>) -> Self {
-    let edge = ((game_size as f32)-1.0) * pixle_size_calculator(game_size);
+  fn new(game_size:usize, input_list: Vec<u128>, output_list:Vec<u32>) -> Self {
     PongGame { 
       current_frame: Matrix::new(game_size, false), 
       input_list, 
+      output_list,
       ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }), 
       paddle_row:0,
       score: 0, 
       pixle_size: pixle_size_calculator(game_size),
-      bottom_right: Vec2::new(edge, edge),
     }
   }
   fn progress_frame(&mut self, direction:(Move,usize)) -> Reward {
     let mut score = Reward::Null;
     self.move_paddle(direction);
-    let (row,col) = self.check_ball_pos();
+    let (row,col) = self.get_ball_pos();
     if self.ball_hit_paddle(row, col) {self.ball.bounce_left_right(); score = Reward::Plesure}
     if (row + 1) == self.current_frame.rows || row == 0 {
       self.ball.bounce_top_bottom();
@@ -175,8 +173,6 @@ impl PongGame {
     
     score
   }
-  fn shift_paddle(&mut self, direction:(Move,usize)) {todo!();}
-  fn move_ball(&mut self) {todo!();}
   fn draw(&self) {
     let length = self.pixle_size;
     for xcell in 0..self.current_frame.rows {
@@ -249,11 +245,40 @@ impl PongGame {
       Move::None => return,
     }
   }
-  fn check_ball_pos(&self) -> (usize,usize) {todo!()}
-  fn ball_hit_paddle(&self, row:usize, col:usize) -> bool {todo!();}
-  fn output_to_moves(&self, output:Vec<u32>) -> (Move,usize) {todo!();}
-}
+  fn get_ball_pos(&self) -> (usize,usize) {
+    let ballx = self.ball.pos.x;
+    let bally = self.ball.pos.y;
+    (self.pixle_to_grid(bally), self.pixle_to_grid(ballx))
+    // x->col, y->row
 
+  }
+  fn ball_hit_paddle(&self, row:usize, col:usize) -> bool {
+    if col != 1 {return false;}
+    if let Some(&check) = self.current_frame.get(row, 0) {
+      return check;
+    } 
+    panic!("Ball left grid");
+  }
+  fn output_to_moves(&self, output:Vec<u32>) -> (Move,usize) {
+    let mut up: i32 = 0;
+    for i in output {
+      // Move Up
+      if i == self.output_list[0] {up += 1;}
+
+      // Move Down
+      if i == self.output_list[1] {up -= 1;}
+    }
+
+    if up == 0 {return (Move::None, 0);}
+    if up.is_positive() {return (Move::Up, up as usize);}
+    if up.is_negative() {return (Move::Down, up.abs() as usize);}
+
+    panic!("Just...how can a number not be pos, neg, or 0???")
+  }
+  fn pixle_to_grid(&self, pixle:f32) -> usize {
+    (pixle/self.pixle_size).floor() as usize
+  }
+}
 fn pixle_size_calculator(game_size:usize) -> f32 {
   if game_size == 0 {panic!("Chosen game size is too large");}
   let smallest = std::cmp::min(screen_height().round() as i32, screen_width().round() as i32);
