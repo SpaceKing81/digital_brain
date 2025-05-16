@@ -18,7 +18,7 @@ pub struct Brain {
   pub neurons: HashMap<u32, Neuron>,
   pub axions: HashMap<u128,Axion>,
   pub output_ids: HashSet<u32>,
-  pub input_ids: Vec<u128>,
+  pub input_ids: HashSet<u128>,
 
   num_of_neurons: u32,
   num_of_axions: u128,
@@ -34,7 +34,7 @@ impl Brain {
       neurons: HashMap::new(),
       axions: HashMap::new(),
       output_ids: HashSet::new(),
-      input_ids: Vec::new(),
+      input_ids: HashSet::new(),
 
       num_of_neurons:0,
       num_of_axions:0,
@@ -134,7 +134,7 @@ impl Brain {
             if neuron.is_output {output.push(neuron_id);continue;}
             for axion_id in output_axions {
               if let Some(axion) = self.axions.get_mut(&axion_id) {
-                let (input_id, strength) = axion.fire(delta_t);
+                let (input_id, strength) = axion.fire_axion(delta_t);
                 if strength != 0 {
                   // update all the input neuron strength memories
                   if let Some(input_neuron) = self.neurons.get_mut(&input_id) {
@@ -143,7 +143,6 @@ impl Brain {
                     if !active_neurons.contains(&input_id) {
                       self.active_neurons.insert(input_id);
                     }
-                  
                   }
                 } else {axions_to_remove.push(axion_id);}
               }}}}}
@@ -157,7 +156,31 @@ impl Brain {
   output
   }
   
-  pub fn brain_input(&mut self, inputs:Option<Vec<u128>>) {drop(inputs); todo!()}
+  pub fn brain_input(&mut self, inputs:Option<Vec<u128>>) {
+    // Check if theres something in it
+    if inputs.is_none() {return;}
+
+    for input_id in inputs.unwrap() {
+      // Check that it exists
+      if !self.input_ids.contains(&input_id) {panic!("Invalid Input id passed in");}
+  
+      // Collect the neuron id
+      if let Some(input) = self.axions.get(&input_id) {
+        let (sink,strength) = input.fire_input();
+        if let Some(neuron) = self.neurons.get_mut(&sink) {
+          neuron.inputs.push(strength);
+
+          // Add to active neuron
+          if !self.active_neurons.contains(&sink) {
+            self.active_neurons.insert(sink);
+          }
+
+        } else { panic!("Library Error: Input axion not connected to a present neuron") }
+      } else { panic!("Library Error: Input axion not in axion list") }
+
+
+    }
+  }
 
 }
 
@@ -296,7 +319,7 @@ impl Brain {
 
 
 impl Brain {
-  pub fn no_more_outputs(&mut self, neuron_id: u32) {
+  fn no_more_outputs(&mut self, neuron_id: u32) {
     if let Some(neuron) = self.neurons.get(&neuron_id) {
       if neuron.is_output {return;}
       if let Some(roll) = neuron.roll_save_check(false) {
@@ -313,7 +336,8 @@ impl Brain {
       }
     }
   }
-  pub fn no_more_inputs(&mut self, neuron_id: u32) {
+  /*
+  fn no_more_inputs(&mut self, neuron_id: u32) {
     if let Some(neuron) = self.neurons.get(&neuron_id) {
       let save = if neuron.is_output {neuron.roll_save_check(true)} else {neuron.roll_save_check(false)};
       if let Some(roll) = save {
@@ -330,7 +354,8 @@ impl Brain {
       }
     }
   }
-  
+  */
+  // DONT FORGET ABOUT THIS GUY ^^^^
   fn add_neuron(&mut self) -> u32 {
     self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
@@ -364,7 +389,8 @@ impl Brain {
   fn add_input(&mut self, sink_id:u32) -> u128 {
     self.num_of_axions +=1;
     let id = self.axions.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    let input = Axion::new(0,sink_id, id, true);
+    let mut input = Axion::new(0,sink_id, id, true);
+    input.strength = MAX_THRESHOLD as i32;
     self.axions.insert(id, input);
 
     // Update neuron connections
@@ -372,7 +398,7 @@ impl Brain {
       sink_neuron.input_axions.push(id);
     }
 
-    self.input_ids.push(id);
+    self.input_ids.insert(id);
     id
   }
 

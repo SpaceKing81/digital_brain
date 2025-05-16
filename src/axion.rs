@@ -41,7 +41,7 @@ impl Axion {
   
   // takes its self and outputs where its going, and the stength of firing
   // delta_t here is the time since last firing of the neuron
-  pub fn fire(&mut self, delta_t:u32) -> (u32,i32) {
+  pub fn fire_axion(&mut self, delta_t:u32) -> (u32,i32) {
     // Order important, don't mix them up
     if self.is_input {
       return (self.id_sink, self.strength);
@@ -50,7 +50,25 @@ impl Axion {
     self.math(delta_t);
     (self.id_sink, self.strength)
   }
-  
+  pub fn get_to_draw(&self) -> (u32, u32, Color) {
+    if self.is_input {
+      return (0, self.id_sink, AXION_INPUT_COLOR);
+    }
+    
+    let (source, sink) = (
+      self.id_source, self.id_sink
+    );
+    let color = match self.strength {
+      s if s > 0 => AXION_POS_COLOR, // Green for excitatory
+      s if s < 0 => AXION_NEG_COLOR, // Red for inhibitory
+      _ => GRAY, // Gray for TB Killed
+    };
+    (source, sink, color)
+  }
+  pub fn fire_input(&self) -> (u32,i32) {
+    (self.id_sink, self.strength)
+  }
+
   fn math(&mut self, delta_t:u32) {
     self.delta_t = delta_t;
     let t = self.delta_t as i32;
@@ -70,22 +88,6 @@ impl Axion {
     self.avg_t = (self.avg_t + self.avg_t + self.delta_t) / 3;
     // Don't need to set delta_t to 0, irrelevent as axions 
     // dont get updated unless being fired
-  }
-
-  pub fn get_to_draw(&self) -> (u32, u32, Color) {
-    if self.is_input {
-      return (0, self.id_sink, AXION_INPUT_COLOR);
-    }
-    
-    let (source, sink) = (
-      self.id_source, self.id_sink
-    );
-    let color = match self.strength {
-      s if s > 0 => AXION_POS_COLOR, // Green for excitatory
-      s if s < 0 => AXION_NEG_COLOR, // Red for inhibitory
-      _ => GRAY, // Gray for TB Killed
-    };
-    (source, sink, color)
   }
 }
 
