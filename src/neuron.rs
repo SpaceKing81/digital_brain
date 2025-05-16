@@ -3,6 +3,7 @@ use macroquad::{
   color::*, math::Vec2, rand, shapes::*,
   window::{screen_width,screen_height},
 };
+use crate::internal_consts::*;
 use crate::consts::*;
 
 

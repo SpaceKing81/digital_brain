@@ -7,7 +7,7 @@ use macroquad::{
 
 use crate::{
   //
-  axion::Axion, neuron::Neuron, consts::*, grid::{grid::*, update_threads::*}
+  axion::Axion, neuron::Neuron, internal_consts::*, consts::*, grid::{grid::*, update_threads::*}
   //
 };
 

@@ -174,7 +174,13 @@ impl PongGame {
           draw_rectangle((xcell as f32) * length, (ycell as f32) * length, length, length, color);
         }}}
   }
-  fn frame_to_inputs(&self) -> Option<Vec<(u128,i32)>> {todo!();}
+  fn frame_to_inputs(&self) -> Option<Vec<(u128,i32)>> {
+    let current_data: &Vec<bool> = &self.current_frame.data;
+    let inputs: &Vec<u128> = &self.input_list;
+    let outputs:Vec<(u128,i32)> = Vec::new();
+    if true {}
+    todo!();
+  }
   fn move_paddle(&mut self, direction:(Move,usize)) {}
   fn check_ball_pos(&self) -> (usize,usize) {todo!()}
 }

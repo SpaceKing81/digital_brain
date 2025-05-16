@@ -6,7 +6,7 @@ pub mod grid {
     use rayon::prelude::*;
 
     use crate::neuron::Neuron;
-    use crate::consts::*;
+    use crate::internal_consts::*;
 
     #[derive(Debug)]
     pub struct GridCell {
@@ -84,7 +84,7 @@ pub mod update_threads {
     use crate::neuron::Neuron;
     use crate::axion::Axion;
     use crate::grid::grid::GridCell;
-    use crate::consts::*;
+    use crate::internal_consts::*;
 
 
     #[derive(Debug)]

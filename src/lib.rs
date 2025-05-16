@@ -1,11 +1,13 @@
 pub mod brain;
+pub mod internal_consts;
 mod axion;
-mod consts;
 mod grid;
 mod neuron;
+mod consts;
 
 // re-export your main Brain type at the crate root:
 pub use brain::Brain;
+pub use internal_consts::*;
 
 #[cfg(test)]
 mod tests {

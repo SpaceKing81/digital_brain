@@ -1,7 +1,7 @@
 // use crate::neuron::Neuron;
 use macroquad::{rand, color::{Color,GRAY}};
 
-use crate::consts::{AXION_INPUT_COLOR, AXION_POS_COLOR, AXION_NEG_COLOR};
+use crate::internal_consts::{AXION_INPUT_COLOR, AXION_POS_COLOR, AXION_NEG_COLOR};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Axion {
