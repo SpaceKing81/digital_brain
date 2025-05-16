@@ -14,8 +14,8 @@ use crate::consts::*;
 pub struct Neuron {
   // id:u32, // name, basiclly
   pub position: Vec2, // Position on the screen
-  base_threshold:u32,
-  threshold:u32, // threshold to fire
+  base_threshold:i32,
+  threshold:i32, // threshold to fire
   pub happyness:u32, // how happy it is with the firing frequency, 0 is happiest
   
   pub is_output: bool,
@@ -131,7 +131,7 @@ impl Neuron {
   pub fn ready_to_fire(&self) -> bool {
     if self.delta_t <= 5 {return false}
     let potential:i32 = self.input_memory.iter().sum();
-    potential.abs() as u32 >= self.threshold
+    potential.abs() >= self.threshold
   } 
   /// Checks if the neuron should be killed
   pub fn check_to_kill(&self) -> bool {
@@ -209,7 +209,7 @@ impl Neuron {
     self.threshold = self.base_threshold;
   }
   fn set_threshold_to_increment(&mut self) {
-    self.threshold = self.threshold.saturating_sub(3 * self.delta_t - 15);
+    self.threshold = std::cmp::max(self.threshold - (3 * self.delta_t as i32 - 15),0);
   }
   fn set_threshold_to_recovery(&mut self) {
     self.threshold = self.base_threshold + 30;
@@ -219,7 +219,7 @@ impl Neuron {
   fn drop_base_threshold(&mut self) {
     let u = (self.delta_t as i32) - (self.avg_t as i32);
     let w = u / ONE_STANDARD_DEV_THRESHOLD;
-    let w = w.abs() as u32;
+    let w = w.abs();
     self.base_threshold = self.base_threshold.saturating_sub(w);
     if self.base_threshold < MIN_THRESHOLD { self.base_threshold = MIN_THRESHOLD; }
     self.post_fire_threshold();
@@ -227,7 +227,7 @@ impl Neuron {
   fn raise_base_threshold(&mut self) {
     let u = (self.delta_t as i32) - (self.avg_t as i32);
     let w = u / ONE_STANDARD_DEV_THRESHOLD;
-    let w = w.abs() as u32;
+    let w = w.abs();
     self.base_threshold += w;
     if self.base_threshold > MAX_THRESHOLD { self.base_threshold = MAX_THRESHOLD; }
     self.post_fire_threshold();

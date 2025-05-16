@@ -2,6 +2,7 @@ use std::sync::RwLockWriteGuard;
 
 use macroquad::{input, prelude::*, rand::rand};
 use digital_brain::Brain;
+use digital_brain::MAX_THRESHOLD;
 
 fn window_conf() -> Conf {
     Conf {
@@ -177,8 +178,13 @@ impl PongGame {
   fn frame_to_inputs(&self) -> Option<Vec<(u128,i32)>> {
     let current_data: &Vec<bool> = &self.current_frame.data;
     let inputs: &Vec<u128> = &self.input_list;
-    let outputs:Vec<(u128,i32)> = Vec::new();
-    if true {}
+    let mut outputs:Vec<(u128,i32)> = Vec::new();
+    for idx in 0..inputs.len() {
+      outputs.push((
+        inputs[idx],
+        MAX_THRESHOLD
+      ));
+    }
     todo!();
   }
   fn move_paddle(&mut self, direction:(Move,usize)) {}
