@@ -156,17 +156,17 @@ impl Brain {
   output
   }
   
-  pub fn brain_input(&mut self, inputs:Option<Vec<u128>>) {
+  pub fn brain_input(&mut self, inputs:Option<Vec<(u128, i32)>>) {
     // Check if theres something in it
     if inputs.is_none() {return;}
 
-    for input_id in inputs.unwrap() {
+    for (input_id, strength) in inputs.unwrap() {
       // Check that it exists
       if !self.input_ids.contains(&input_id) {panic!("Invalid Input id passed in");}
   
       // Collect the neuron id
       if let Some(input) = self.axions.get(&input_id) {
-        let (sink,strength) = input.fire_input();
+        let sink = input.id_sink;
         if let Some(neuron) = self.neurons.get_mut(&sink) {
           neuron.inputs.push(strength);
 
@@ -434,7 +434,6 @@ impl Brain {
 
 /*
 Current Plan and work:
-- combine inputs into axions and outputs into neurons
 - set up the secondary special pipelines for both, nothing to fancy, but some special treatment here and there
 - uproot current framework, replace with pure input-output
 - outputs and input number determined on startup, full list of each with names returned before simulation begins
@@ -443,6 +442,5 @@ Current Plan and work:
 - thinking of setting up and connecting a game of pong for test-casing inputs + outputs
 - 5x5 grid, one movable 2x1 paddle, a ball that just bounces back and forth
 - chaos and reset any time the ball hits the wall, order any time the ball hits the paddle
-
 
 */

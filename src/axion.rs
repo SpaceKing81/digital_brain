@@ -65,9 +65,6 @@ impl Axion {
     };
     (source, sink, color)
   }
-  pub fn fire_input(&self) -> (u32,i32) {
-    (self.id_sink, self.strength)
-  }
 
   fn math(&mut self, delta_t:u32) {
     self.delta_t = delta_t;

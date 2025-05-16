@@ -1,4 +1,4 @@
-use macroquad::{prelude::*, rand::rand};
+use macroquad::{input, prelude::*, rand::rand};
 use digital_brain::Brain;
 
 fn window_conf() -> Conf {
@@ -12,7 +12,11 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  
+  let mut game = PongGame::new(5, vec![0,1,2]);
+  game.current_frame.set(4, 4, true);
+  game.current_frame.set(0, 0, true);
+  game.current_frame.set(4, 0, true);
+  game.current_frame.set(0, 4, true);
   // Main loop
   loop {
     // Handle Ending
@@ -25,17 +29,18 @@ async fn main() {
 
     // Clear the screen
     clear_background(BLACK);
-
-    // Update and draw neurons and axons
+    
+    // Draw Game
+    game.draw();
     
     // Draw FPS and other info
-    draw_text(
-      &format!("Hello world"),
-      20.,
-      20.,
-      20.,
-      WHITE,
-    );
+    // draw_text(
+    //   &format!("Hello world"),
+    //   20.,
+    //   20.,
+    //   20.,
+    //   WHITE,
+    // );
     }
     // Render the frame
     next_frame().await;
@@ -83,20 +88,29 @@ matrix
 }
 
 struct PongGame {
-  clock:usize,
   current_frame:Matrix<bool>,
   input_list:Vec<u128>,
   ball:Ball,
-
   score:usize,
-  game_size:usize,
-
-
+  pixle_size:f32,
+  bottom_right:Vec2,
 }
 struct Ball {
   pos:Vec2,
   vel:Vec2,
 }
+#[derive(Clone, Copy)]
+enum Move {
+  Up,
+  Down,
+  None,
+}
+
+impl Move {
+  fn output_to_moves(outputs:Vec<u32>) -> (Self, usize) {todo!();}
+}
+
+
 impl Ball {
   fn new(center:Vec2) -> Self {
     let x = rand::gen_range(0.0, 2.0);
@@ -116,11 +130,45 @@ impl Ball {
   fn bounce_left_right(&mut self) {
     self.vel = Vec2::new(0.0-self.vel.x, self.vel.y);
   }
-
 }
 
 impl PongGame {
-  fn new() -> Self {
-    todo!()
+  fn new(game_size:usize, input_list: Vec<u128>) -> Self {
+    let edge = ((game_size as f32)-1.0) * pixle_size_calculator(game_size);
+    PongGame { 
+      current_frame: Matrix::new(game_size, false), 
+      input_list, 
+      ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }), 
+      score: 0, 
+      pixle_size: pixle_size_calculator(game_size),
+      bottom_right: Vec2::new(edge, edge),
+    }
   }
+  fn progress_frame(&mut self, direction:(Move,usize)) -> Result<(),String> {
+    for i in 0..direction.1 {
+      self.move_paddle(direction.0);
+    } 
+    todo!();
+  }
+  fn shift_paddle(&mut self, direction:(Move,usize)) {todo!();}
+  fn move_ball(&mut self) {todo!();}
+  fn draw(&self) {
+    let length = self.pixle_size;
+    for xcell in 0..self.current_frame.rows {
+      for ycell in 0..self.current_frame.cols {
+        if let Some(state) = self.current_frame.get(xcell, ycell) {
+          let color = if *state {WHITE} else {BLACK};
+          draw_rectangle((xcell as f32) * length, (ycell as f32) * length, length, length, color);
+        }}}
+  }
+  fn frame_to_inputs(&self) -> Vec<(u128,i32)> {todo!();}
+  fn move_paddle(&mut self, shift:Move) {}
+}
+
+fn pixle_size_calculator(game_size:usize) -> f32 {
+  if game_size == 0 {panic!("Chosen game size is too large");}
+  let smallest = std::cmp::min(screen_height().round() as i32, screen_width().round() as i32);
+  if smallest > std::cmp::min(smallest, game_size as i32) {
+    return (smallest as f32/game_size as f32) as f32
+  } else { panic!("Chosen game size is too large") }
 }
