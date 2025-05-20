@@ -89,7 +89,7 @@ impl Brain {
     // Step 3: Add + Configure Inputs
     let mut input_ids = Vec::new();
     while brain.input_ids.len() < num_input as usize {
-      let sink_id = neuron_ids[rand::gen_range(0, neuron_ids.len())];
+      let sink_id = neuron_ids[rand::gen_range(1, neuron_ids.len())];
       if !output_ids.contains(&sink_id) || brain.neurons.contains_key(&sink_id) {
         input_ids.push(brain.add_input(sink_id));
       }
@@ -155,8 +155,6 @@ impl Brain {
       for axion_id in axions_to_remove {self.remove_axion(axion_id);}
       for neuron_id in neurons_to_remove {self.no_more_outputs(neuron_id);}
   }
-  let output: HashSet<u32> = output.into_iter().collect();
-  let output: Vec<u32> = output.into_iter().collect();
   output
   }
   
@@ -362,7 +360,7 @@ impl Brain {
   // DONT FORGET ABOUT THIS GUY ^^^^
   fn add_neuron(&mut self) -> u32 {
     self.num_of_neurons +=1;
-    let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
+    let id = self.neurons.keys().max().unwrap_or(&1) + 1; // Generate a unique ID
     self.neurons.insert(id, Neuron::new(false));
     id
   }
@@ -432,15 +430,20 @@ impl Brain {
     }
   }
 
+  fn input_is_valid(&self, input:&Axion) -> bool {
+    if self.axions.contains_key(&input.id) {
+      return true
+    }
+    if self.neurons.contains_key(&input.id_sink) {
+      return true;
+    }
+    false
+  }
 }
 
 
 /*
 Current Plan and work:
-- set up the secondary special pipelines for both, nothing to fancy, but some special treatment here and there
-- uproot current framework, replace with pure input-output
-- outputs and input number determined on startup, full list of each with names returned before simulation begins
-- anytime output fires a tick, return a vec of output id's
 - set up a system to input a vec every tick tied to the individual outputs
 - thinking of setting up and connecting a game of pong for test-casing inputs + outputs
 - 5x5 grid, one movable 2x1 paddle, a ball that just bounces back and forth
