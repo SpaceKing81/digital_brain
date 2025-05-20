@@ -87,7 +87,7 @@ impl Brain {
 
     // Step 3: Add + Configure Inputs
     let mut input_ids = Vec::new();
-    while brain.input_ids.len() <= num_input as usize {
+    while brain.input_ids.len() < num_input as usize {
       let sink_id = &neuron_ids[rand::gen_range(1, neuron_ids.len())];
       if !output_ids.contains(sink_id) && brain.neurons.contains_key(sink_id) {
         input_ids.push(brain.add_input(*sink_id));

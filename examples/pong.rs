@@ -28,18 +28,18 @@ async fn main() {
     }
     // Brain thinking
     let outputs = brain.tick(Some(29));
-    let direction = game.output_to_moves(outputs);
+    let direction = game.output_to_moves(dbg!(outputs));
     // Drawing a frame
     { 
     
     // Clear the screen
     clear_background(BLACK);
 
-
-    match game.progress_frame(direction) {
+    let outcome = game.progress_frame(direction);
+    match outcome {
       Reward::Pain => {brain.pain(None);},
       Reward::Plesure => {brain.reward(None);},
-      Reward::Null => {continue;},
+      Reward::Null => {},
     }
     // Draw Game
     game.draw();
@@ -83,7 +83,7 @@ matrix
     }
   }
   pub fn get(&self, row:usize, col:usize) -> Option<&T> {
-    if self.rows < row && self.cols < col {
+    if self.rows < row || self.cols < col {
       return None
     }
     Some(&self.data[row * self.cols + col])
@@ -103,7 +103,7 @@ struct PongGame {
   input_list:Vec<u128>,
   output_list:Vec<u32>,
   ball:Ball,
-  paddle_row:usize,
+  paddle_col:usize,
   score:usize,
   pixle_size:f32,
 }
@@ -126,9 +126,9 @@ enum Reward {
 
 impl Ball {
   fn new(center:Vec2) -> Self {
-    let x = rand::gen_range(0.0, 2.0);
-    let y = rand::gen_range(0.0, 2.0);
-    let vel = Vec2::new(x, y).normalize();    
+    let x = rand::gen_range(-10.0, 10.0);
+    let y = rand::gen_range(-10.0, 10.0);
+    let vel = Vec2::new(x, y);    
     Ball {
       vel,
       pos:center,
@@ -149,35 +149,110 @@ impl PongGame {
   fn new(game_size:usize, input_list: Vec<u128>, output_list:Vec<u32>) -> Self {
     let mut new = PongGame { 
       current_frame: Matrix::new(game_size, false), 
-      input_list, 
+      input_list,
       output_list,
       ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }), 
-      paddle_row:0,
+      paddle_col:0,
       score: 0, 
       pixle_size: pixle_size_calculator(game_size),
     };
     let (row, col) = new.get_ball_pos();
     new.current_frame.set(row, col, true).unwrap_or_default();
-    for i in 0..1 {
-      new.current_frame.set(i,0, true).unwrap_or_default();
-    }
+    new.current_frame.set(0,0, true).unwrap_or_default();
+    new.current_frame.set(0,1, true).unwrap_or_default();
     new
   }
   fn progress_frame(&mut self, direction:(Move,usize)) -> Reward {
     let mut score = Reward::Null;
     self.move_paddle(direction);
     let (row,col) = self.get_ball_pos();
-    if self.ball_hit_paddle(row, col) {self.ball.bounce_left_right(); score = Reward::Plesure}
-    if (row + 1) == self.current_frame.rows || row == 0 {
+    
+    if self.ball_hit_paddle(row, col) {
+      self.ball.bounce_left_right(); 
+      score = Reward::Plesure
+    }
+    if (col + 1) == self.current_frame.cols || col == 0 {
       self.ball.bounce_top_bottom();
     }
-    if (col + 1) == self.current_frame.cols || row == 0 {
+    if (row + 1) == self.current_frame.rows || row == 0 {
       self.ball.bounce_left_right();
     }
-    if col == 0 { self.score +=1; score = Reward::Pain; }
+    if row == 0 { self.score +=1; score = Reward::Pain; }
+    
     self.ball.forward();
     
     score
+  }
+  fn move_paddle(&mut self, direction:(Move,usize)) {
+    if let Some(_) = self.current_frame.get(
+      0,
+      self.paddle_col + 1, 
+    ) {
+    self.current_frame.set(
+      0,
+      self.paddle_col,
+      false
+    ).unwrap_or_default();
+    self.current_frame.set(
+      0,
+      self.paddle_col + 1,
+      false
+    ).unwrap_or_default();
+  }
+    match direction.0 {
+      Move::Down => {
+        if let Some(_) = self.current_frame.get(
+          0,
+          self.paddle_col + direction.1 + 1, 
+        ) {
+          // If this is a valid place on the map, then:
+          self.current_frame.set(
+            0, 
+            self.paddle_col + direction.1 + 1,
+            true
+          ).unwrap_or_default();
+          self.current_frame.set(
+            0, 
+            self.paddle_col+ direction.1,
+            true
+          ).unwrap_or_default();
+          self.paddle_col = self.paddle_col + direction.1
+
+        } else { 
+          self.current_frame.set(
+            0,
+            self.current_frame.cols - 1, 
+            true
+          ).unwrap_or_default(); 
+          self.current_frame.set(
+            0, 
+            self.current_frame.cols - 2, 
+            true
+          ).unwrap_or_default();
+          self.paddle_col = self.current_frame.cols - 2;                                   
+        }
+      },
+      Move::Up => {
+        if let Some(_) = self.current_frame.get(
+          0, 
+          self.paddle_col.saturating_sub(direction.1),
+        ) {
+          // If this is a valid place on the map (and it should be always)
+          self.current_frame.set(
+          0, 
+          self.paddle_col.saturating_sub(direction.1),
+          true
+        ).unwrap_or_default();
+          self.current_frame.set(
+            0, 
+            self.paddle_col.saturating_sub(direction.1) + 1,
+            true
+          ).unwrap_or_default();
+
+        } else {unreachable!("Somehow, the matrix doesn't have a (0,0) cord?")}
+      },
+      Move::None => return,
+    }
   }
   fn draw(&self) {
     let length = self.pixle_size;
@@ -191,7 +266,7 @@ impl PongGame {
   fn frame_to_inputs(&self) -> Option<Vec<(u128,i32)>> {
     let current_data: &Vec<bool> = &self.current_frame.data;
     let inputs: &Vec<u128> = &self.input_list;
-    if current_data.len() != inputs.len() { panic!("The input-length and data length are different sizes") }
+    if current_data.len() != inputs.len() { dbg!(inputs.len(), current_data.len());panic!("The input-length and data length are different sizes") }
     let mut outputs:Vec<(u128,i32)> = Vec::new();
     for idx in 0..inputs.len() {
       if current_data[idx] { 
@@ -204,63 +279,16 @@ impl PongGame {
     if outputs.is_empty() {return None;}
     Some(outputs)
   }
-  fn move_paddle(&mut self, direction:(Move,usize)) {
-    match direction.0 {
-      Move::Down => {
-        if let Ok(_) = self.current_frame.set(
-          self.paddle_row + direction.1 + 1, 
-          0, 
-          true
-        ) {
-          // If this is a valid place on the map, then:
-          self.current_frame.set(
-            self.paddle_row + direction.1, 
-            0, 
-            true
-          ).unwrap_or_default();
-          self.paddle_row = self.paddle_row + direction.1
-
-        } else { 
-          self.current_frame.set(
-            self.current_frame.rows - 1, 
-            0, 
-            true).unwrap_or_default(); 
-          self.current_frame.set(
-            self.paddle_row + direction.1 - 2, 
-            0, 
-            true
-          ).unwrap_or_default();
-          self.paddle_row = self.current_frame.rows - 1;                                   
-        }
-      },
-      Move::Up => {
-        if let Ok(_) = self.current_frame.set(
-          self.paddle_row.saturating_sub(direction.1),
-          0, 
-          true
-        ) {
-          // If this is a valid place on the map (and it should be always)
-          self.current_frame.set(
-            self.paddle_row.saturating_sub(direction.1),
-            0, 
-            true
-          ).unwrap_or_default();
-
-        } else {unreachable!("Somehow, the matrix doesn't have a (0,0) cord?")}
-      },
-      Move::None => return,
-    }
-  }
   fn get_ball_pos(&self) -> (usize,usize) {
     let ballx = self.ball.pos.x;
     let bally = self.ball.pos.y;
-    (self.pixle_to_grid(bally), self.pixle_to_grid(ballx))
+    (self.pixle_to_grid(ballx), self.pixle_to_grid(bally))
     // x->col, y->row
 
   }
   fn ball_hit_paddle(&self, row:usize, col:usize) -> bool {
-    if col != 1 {return false;}
-    if let Some(&check) = self.current_frame.get(row, 0) {
+    if row != 1 {return false;}
+    if let Some(&check) = self.current_frame.get(0, col) {
       return check;
     } 
     panic!("Ball left grid");
