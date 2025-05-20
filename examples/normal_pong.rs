@@ -26,18 +26,18 @@ async fn main() {
     // Clear the screen
     clear_background(BLACK);
 
-    game.progress_frame((Move::None, 0));
+    game.progress_frame();
     // Draw Game
     game.draw();
 
     // Draw FPS and other info
-    // draw_text(
-    //   &format!("Hello world"),
-    //   20.,
-    //   20.,
-    //   20.,
-    //   WHITE,
-    // );
+    draw_text(
+      &format!("Score: {}", game.score),
+      20.,
+      20.,
+      20.,
+      WHITE,
+    );
     }
     // Render the frame
     next_frame().await;
@@ -138,8 +138,8 @@ impl PongGame {
     new.current_frame.set(0,1, true).unwrap_or_default();
     new
   }
-  fn progress_frame(&mut self, direction:(Move,usize))  {
-    // self.move_paddle(direction);
+  fn progress_frame(&mut self)  {
+    self.move_paddle(get_move());
     let (row,col) = self.get_ball_pos();
     if let Some(_) = self.current_frame.get(
       row,
@@ -177,7 +177,7 @@ impl PongGame {
     ).unwrap_or_default();
   }
   }
-  fn move_paddle(&mut self, direction:(Move,usize)) {
+  fn move_paddle(&mut self, direction:Move) {
     if let Some(_) = self.current_frame.get(
       0,
       self.paddle_col + 1, 
@@ -193,57 +193,57 @@ impl PongGame {
       false
     ).unwrap_or_default();
   }
-    match direction.0 {
+    match direction {
       Move::Down => {
         if let Some(_) = self.current_frame.get(
           0,
-          self.paddle_col + direction.1 + 1, 
+          self.paddle_col + 2, 
         ) {
           // If this is a valid place on the map, then:
           self.current_frame.set(
             0, 
-            self.paddle_col + direction.1 + 1,
+            self.paddle_col + 1,
             true
           ).unwrap_or_default();
           self.current_frame.set(
             0, 
-            self.paddle_col+ direction.1,
+            self.paddle_col + 2,
             true
           ).unwrap_or_default();
-          self.paddle_col = self.paddle_col + direction.1
+          self.paddle_col += 1;
 
         } else { 
           self.current_frame.set(
             0,
-            self.current_frame.cols - 1, 
+            self.current_frame.cols, 
             true
           ).unwrap_or_default(); 
           self.current_frame.set(
             0, 
-            self.current_frame.cols - 2, 
+            self.current_frame.cols - 1, 
             true
           ).unwrap_or_default();
-          self.paddle_col = self.current_frame.cols - 2;                                   
+          self.paddle_col = self.current_frame.cols - 1;                                   
         }
       },
       Move::Up => {
         if let Some(_) = self.current_frame.get(
           0, 
-          self.paddle_col.saturating_sub(direction.1),
+          self.paddle_col.saturating_sub(1),
         ) {
           // If this is a valid place on the map (and it should be always)
           self.current_frame.set(
           0, 
-          self.paddle_col.saturating_sub(direction.1),
+          self.paddle_col.saturating_sub(1),
           true
         ).unwrap_or_default();
           self.current_frame.set(
             0, 
-            self.paddle_col.saturating_sub(direction.1) + 1,
+            self.paddle_col.saturating_sub(1) + 1,
             true
           ).unwrap_or_default();
 
-        } else {unreachable!("Somehow, the matrix doesn't have a (0,0) cord?")}
+        } else {panic!("somehow the matrix doesn't have a (0,0) cord?")}
       },
       Move::None => return,
     }
@@ -282,3 +282,16 @@ fn pixle_size_calculator(game_size:usize) -> f32 {
     return (smallest as f32/game_size as f32) as f32
   } else { panic!("Chosen game size is too large") }
 }
+fn get_move() -> Move {
+  if is_key_released(KeyCode::Down) {
+    return Move::Down;
+  }
+  if is_key_released(KeyCode::Up) {
+    return Move::Up;
+  }
+  
+  
+  Move::None
+}
+
+

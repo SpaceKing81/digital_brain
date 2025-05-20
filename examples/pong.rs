@@ -28,7 +28,7 @@ async fn main() {
     }
     // Brain thinking
     let outputs = brain.tick(Some(29));
-    let direction = game.output_to_moves(dbg!(outputs));
+    let direction = dbg!(game.output_to_moves(outputs));
     // Drawing a frame
     { 
     
@@ -58,7 +58,7 @@ async fn main() {
     next_frame().await;
   }
 }
-
+#[derive(Clone, Debug)]
 struct Matrix<T> {
   data:Vec<T>, // either white or black
   cols:usize,
@@ -97,7 +97,7 @@ matrix
   }
 
 }
-
+#[derive(Clone, Debug)]
 struct PongGame {
   current_frame:Matrix<bool>,
   input_list:Vec<u128>,
@@ -107,16 +107,18 @@ struct PongGame {
   score:usize,
   pixle_size:f32,
 }
+#[derive(Clone, Copy, Debug)]
 struct Ball {
   pos:Vec2,
   vel:Vec2,
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum Move {
   Up,
   Down,
   None,
 }
+#[derive(Clone, Copy, Debug)]
 enum Reward {
   Null,
   Pain,
