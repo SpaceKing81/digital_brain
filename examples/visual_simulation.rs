@@ -1,8 +1,12 @@
+use std::collections::HashMap;
+
 use macroquad::prelude::*;
 use digital_brain::Brain;
+use digital_brain::MAX_THRESHOLD;
 
 /// Calculate Modulus operations
 // fn modulo<T>(a: T, b: T) -> T where T: std::ops::Rem<Output = T> + std::ops::Add<Output = T> + Copy, {((a % b) + b) % b}
+
 fn window_conf() -> Conf {
     Conf {
         window_title: "Brain Simulation".to_owned(),
@@ -14,8 +18,43 @@ fn window_conf() -> Conf {
 
 
 const STARTING_NEURONS:u32 = 100;
-const STARTING_INPUTS:u128 = 27;
-const STARTING_OUTPUTS:u32 = 27;
+const STARTING_INPUTS:u128 = 33;
+const STARTING_OUTPUTS:u32 = 33;
+const CLICKABLE_KEYS:[KeyCode;33] = [
+    KeyCode::Space,
+    KeyCode::Apostrophe,
+    KeyCode::Comma,
+    KeyCode::Period,
+    KeyCode::Semicolon,
+    KeyCode::A,
+    KeyCode::B,
+    KeyCode::C,
+    KeyCode::D,
+    KeyCode::E,
+    KeyCode::F,
+    KeyCode::G,
+    KeyCode::H,
+    KeyCode::I,
+    KeyCode::J,
+    KeyCode::K,
+    KeyCode::L,
+    KeyCode::M,
+    KeyCode::N,
+    KeyCode::O,
+    KeyCode::P,
+    KeyCode::Q,
+    KeyCode::R,
+    KeyCode::S,
+    KeyCode::T,
+    KeyCode::U,
+    KeyCode::V,
+    KeyCode::W,
+    KeyCode::X,
+    KeyCode::Y,
+    KeyCode::Z,
+    KeyCode::Enter,
+    KeyCode::Backspace
+];
 // const IDEAL_TPS:f64 = 60.0;
 
 #[macroquad::main(window_conf)]
@@ -27,8 +66,8 @@ async fn main() {
     let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
     let (
         mut brain, 
-        _inputs, 
-        _outputs
+        inputs, 
+        outputs
     ) = Brain::spin_up_new(
         STARTING_NEURONS,
         STARTING_INPUTS, 
@@ -42,23 +81,17 @@ async fn main() {
             println!("Terminating Brain...");
             break;
         }
+        let data = keys_to_input(&inputs);
 
         // Update the brain
-        for _ in 0..29 {
-            /*
-            debug notes:
-            - cannot go over 29 thoughts per simulation tick without crashing. For some reason.
-             */
-           
-            brain.tick(None);
-            // if ticks/get_time() < IDEAL_TPS || is_key_down(KeyCode::Escape){ break; }
-        }
+        brain.brain_input(data.inputs);
+        let output = output_to_keys(&outputs,brain.tick(Some(29)));
+
         // Drawing a frame
         { 
 
         // Clear the screen
         clear_background(BLACK);
-
         // Update and draw neurons and axons
         brain.render(center);
         // Draw FPS and other info
@@ -76,21 +109,63 @@ async fn main() {
     }
 }
 
+struct Data {
+    inputs:Option<Vec<(u128,i32)>>,
+    outputs:Option<Vec<KeyCode>>,
+}
+
+fn keys_to_input(inputs:&Vec<u128>) -> Data {
+    let mut a = 0;
+    let mut input = Vec::new();
+    for &i in &CLICKABLE_KEYS {
+        if is_key_released(i) {
+            input.push((inputs[a],MAX_THRESHOLD));
+        }
+        a += 1;
+    }
+    if !input.is_empty() {
+        return Data {inputs:Some(input), outputs:None}
+    }
+    Data {
+        inputs:None,
+        outputs:None,
+    }
+}
+fn output_to_keys(outputs:&Vec<u32>, thoughts:Option<Vec<u32>>) -> Data {
+    if let Some(thoughts) = thoughts {
+    let mut tokens:HashMap<u32,Vec<usize>> = HashMap::new();
+    
+    for i in 0..thoughts.len() {
+        if let Some(letter) = tokens.get_mut(&thoughts[i]) {
+            letter.push(i);
+        } else {
+            tokens.insert(thoughts[i], vec![i]);
+        }
+    }
+
+    let mut key_converted: Vec<(usize,KeyCode)> = Vec::new();
+    for (letter_code, spot) in tokens {
+        let letter = convert_to_key(outputs, letter_code);
+        for s in spot {
+            key_converted.push((s,letter));
+        }
+    }
+}
+    
+    Data {
+        inputs:None,
+        outputs:None,
+    }  
+}
+fn convert_to_key(outputs:&Vec<u32>, letter:u32) -> KeyCode {
+    todo!();
+}
 
 /*
 TODO:
-- Fix the spin up so that it is actually working and somewhat efficnet
-- Expand the input to be better
-- Need to make a special tick that goes through and updates all the neurons
-    - compile all the logic so that it can iterate through everything once, and not have to do multiple for loops
-    for things like drawing, and then updating, and then general updating, blah blah blah. Consolidate everything so that
-    it can be combined into a single fn under a single for loop for every input, then every axion, then neuron, then output.
-
-- ITS NOT CRASHING FOR ONCE!!!!
--Because i am me, i imedietly tried to break it to see what happens:
-    - Max neuron number before frame preformence suffers: 200 neurons at 60 TPS
-    - Oddly, the less neurons there are, the more jumpy the whole thing becomes
-    - Good TPS is around 60
+- forgot this exists, haven't looked at it in forever. Last time looking at this:
+    - May 20 2025
+    -
 
 
 NOTES:
@@ -99,7 +174,7 @@ and this can then change based on average firing rate. Once the node fires, the 
 on the average rate, and then artificialy boosted by the reload function, which is constant. 
 
 UNKNOWN GOAL: Each node operates individually, running basic calculations continuously like 
-tick and memory increments, and modulating thresholds post firing and slow alteration of axon weights with disuse.
+tick and memory increments, and modulating thresholds post firing and slow alteration of axion weights with disuse.
 Firing functions kick in and the whole system gets activated from semi-dormant state when surpassing threshold,
 pushing an update to all the connected nodes who then possibly update as well.
 

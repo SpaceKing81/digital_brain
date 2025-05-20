@@ -265,22 +265,25 @@ impl PongGame {
     } 
     panic!("Ball left grid");
   }
-  fn output_to_moves(&self, output:Vec<u32>) -> (Move,usize) {
+  fn output_to_moves(&self, output:Option<Vec<u32>>) -> (Move,usize) {
     let mut up: i32 = 0;
-    for i in output {
-      // Move Up
-      if i == self.output_list[0] {up += 1;}
+    if let Some(out) = output {
+      for i in out {
+        // Move Up
+        if i == self.output_list[0] {up += 1;}
 
-      // Move Down
-      if i == self.output_list[1] {up -= 1;}
+        // Move Down
+        if i == self.output_list[1] {up -= 1;}
+      }
+
+      if up == 0 {return (Move::None, 0);}
+      if up.is_positive() {return (Move::Up, up as usize);}
+      if up.is_negative() {return (Move::Down, up.abs() as usize);}
+
+      panic!("Just...how can a number not be pos, neg, or 0???")
     }
-
-    if up == 0 {return (Move::None, 0);}
-    if up.is_positive() {return (Move::Up, up as usize);}
-    if up.is_negative() {return (Move::Down, up.abs() as usize);}
-
-    panic!("Just...how can a number not be pos, neg, or 0???")
-  }
+    (Move::None, 0)
+}
   fn pixle_to_grid(&self, pixle:f32) -> usize {
     (pixle/self.pixle_size).floor() as usize
   }

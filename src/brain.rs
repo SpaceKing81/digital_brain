@@ -11,7 +11,7 @@ use crate::{
   //
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Brain {
   pub clock:u128,
 
@@ -46,17 +46,16 @@ impl Brain {
   pub fn spin_up_new(num_neurons: u32, num_input: u128, num_output: u32) -> (Self, Vec<u128>, Vec<u32>) {
     // Step 0: Create Brain
     let mut brain = Self::new();
+    
+    // Step 1: Add outputs  
+    for _ in 0..num_output {
+      brain.add_output();
+    }
+    let output_ids: HashSet<u32> = brain.output_ids.clone();
 
-    // Step 1: Create neurons
+    // Step 2: Create neurons
     for _ in 0..(num_neurons + 10) {
       brain.add_neuron();
-    }
-
-    // Step 2: Add outputs
-    let mut output_ids: Vec<u32> = Vec::new();
-
-    for _ in 0..num_output {
-      output_ids.push(brain.add_output());
     }
 
     // Cache neuron IDs into a Vec for efficient random access
@@ -90,17 +89,20 @@ impl Brain {
     let mut input_ids = Vec::new();
     while brain.input_ids.len() <= num_input as usize {
       let sink_id = &neuron_ids[rand::gen_range(1, neuron_ids.len())];
-      if !output_ids.contains(sink_id) || brain.neurons.contains_key(sink_id) {
+      if !output_ids.contains(sink_id) && brain.neurons.contains_key(sink_id) {
         input_ids.push(brain.add_input(*sink_id));
       }
     }
+
+    let output_ids = output_ids.iter().copied().collect();
+
     println!("Brain initialized. Thinking...");
     (brain, input_ids, output_ids)
   }
   
   /// Ticks over the brain simulation for however many specified ticks, with a default of 1 iteration.
   /// No input, however all the output id's are collected and output at the end
-  pub fn tick(&mut self, num_iterations:Option<u32>) -> Vec<u32> {
+  pub fn tick(&mut self, num_iterations:Option<u32>) -> Option<Vec<u32>> {
     let mut output = Vec::new();
     for _ in 0..num_iterations.unwrap_or(1) {
       // one tick passes
@@ -155,7 +157,10 @@ impl Brain {
       for axion_id in axions_to_remove {self.remove_axion(axion_id);}
       for neuron_id in neurons_to_remove {self.no_more_outputs(neuron_id);}
   }
-  output
+  if output.is_empty() {
+    return None;
+  }
+  Some(output)
   }
   
   pub fn brain_input(&mut self, inputs:Option<Vec<(u128, i32)>>) {
@@ -360,7 +365,7 @@ impl Brain {
   // DONT FORGET ABOUT THIS GUY ^^^^
   fn add_neuron(&mut self) -> u32 {
     self.num_of_neurons +=1;
-    let id = self.neurons.keys().max().unwrap_or(&1) + 1; // Generate a unique ID
+    let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
     self.neurons.insert(id, Neuron::new(false));
     id
   }
@@ -397,7 +402,7 @@ impl Brain {
     // Update neuron connections
     if let Some(sink_neuron) = self.neurons.get_mut(&sink_id) {
       sink_neuron.input_axions.push(id);
-    } else {dbg!("sink_id");}
+    } else {dbg!(sink_id);}
     // Put it in the brain
     self.input_ids.insert(id);
     id
@@ -449,4 +454,8 @@ Current Plan and work:
 - 5x5 grid, one movable 2x1 paddle, a ball that just bounces back and forth
 - chaos and reset any time the ball hits the wall, order any time the ball hits the paddle
 
+
+current issues:
+- For some reason, inputs are directly connecting to outputs
+- The frezzing issue only occurs to non-outputs not connected to inputs
 */
