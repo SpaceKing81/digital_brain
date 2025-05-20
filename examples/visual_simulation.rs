@@ -72,6 +72,7 @@ async fn main() {
         STARTING_INPUTS, 
         STARTING_OUTPUTS
     );
+    let mut text: Vec<KeyCode> = Vec::new();
     
     // Main loop
     loop {
@@ -84,7 +85,15 @@ async fn main() {
 
         // Update the brain
         brain.brain_input(data.inputs);
-        let output = output_to_keys(&outputs,brain.tick(Some(29)));
+
+        if let Some(mut output) = 
+        output_to_keys(
+            &outputs,brain.tick(Some(29))
+        )
+        .outputs {
+            text.append(&mut output);
+        }
+        
 
         // Drawing a frame
         { 
@@ -95,13 +104,20 @@ async fn main() {
         brain.render(center);
         // Draw FPS and other info
         draw_text(
-            &format!("TPS: {}, Clock {}",(ticks/get_time()).round(), brain.clock),
+            &format!("Clock {}", brain.clock),
             20.,
             20.,
             20.,
             WHITE,
         );
-        ticks += 1.0;
+        draw_text(
+            &format!("{:?}", text),
+            20.,
+            40.,
+            20.,
+            WHITE,
+        );
+
         }
         // Render the frame
         next_frame().await;
@@ -149,6 +165,9 @@ fn output_to_keys(outputs:&Vec<u32>, thoughts:Option<Vec<u32>>) -> Data {
             key_converted.push((s,letter));
         }
     }
+    key_converted.sort_by_key(|&(idx, _)| idx);
+    let (_, outputs):(Vec<usize>,Vec<KeyCode>) = key_converted.into_iter().unzip();
+    return Data {inputs:None,outputs:Some(outputs)};
 }
     
     Data {
@@ -157,7 +176,12 @@ fn output_to_keys(outputs:&Vec<u32>, thoughts:Option<Vec<u32>>) -> Data {
     }  
 }
 fn convert_to_key(outputs:&Vec<u32>, letter:u32) -> KeyCode {
-    todo!();
+    for i in 0..outputs.len() {
+        if outputs[i] == letter {
+            return CLICKABLE_KEYS[i]
+        }
+    }
+    unreachable!()
 }
 fn keycode_to_char(key: KeyCode) -> Option<char> {
     use KeyCode::*;
