@@ -18,14 +18,13 @@ fn window_conf() -> Conf {
 
 
 const STARTING_NEURONS:u32 = 100;
-const STARTING_INPUTS:u128 = 33;
-const STARTING_OUTPUTS:u32 = 33;
-const CLICKABLE_KEYS:[KeyCode;33] = [
+const STARTING_INPUTS:u128 = 32;
+const STARTING_OUTPUTS:u32 = 32;
+const CLICKABLE_KEYS:[KeyCode;32] = [
     KeyCode::Space,
     KeyCode::Apostrophe,
     KeyCode::Comma,
     KeyCode::Period,
-    KeyCode::Semicolon,
     KeyCode::A,
     KeyCode::B,
     KeyCode::C,
@@ -160,6 +159,49 @@ fn output_to_keys(outputs:&Vec<u32>, thoughts:Option<Vec<u32>>) -> Data {
 fn convert_to_key(outputs:&Vec<u32>, letter:u32) -> KeyCode {
     todo!();
 }
+fn keycode_to_char(key: KeyCode) -> Option<char> {
+    use KeyCode::*;
+    // basic a–z
+    let base:char = match key {
+        A  => 'a',
+        B  => 'b',
+        C  => 'c',
+        D  => 'd',
+        E  => 'e',
+        F  => 'f',
+        G  => 'g',
+        H  => 'h',
+        I  => 'i',
+        J  => 'j',
+        K  => 'k',
+        L  => 'l',
+        M  => 'm',
+        N  => 'n',
+        O  => 'o',
+        P  => 'p',
+        Q  => 'q',
+        R  => 'r',
+        S  => 's',
+        T  => 't',
+        U  => 'u',
+        V  => 'v',
+        W  => 'w',
+        X  => 'x',
+        Y  => 'y',
+        Z  => 'z',
+
+        Space => ' ',
+        Comma => ',',
+        Period => '.',
+        Apostrophe => ',',
+        _ => return None,
+    };
+
+    Some(base)
+}
+fn keycode_to_action(key: KeyCode) -> Option<char> {todo!()}
+
+
 
 /*
 TODO:
