@@ -11,7 +11,7 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let mut game = PongGame::new(5);
+  let mut game = PongGame::new(30);
 
   // Main loop
   loop {
@@ -68,13 +68,13 @@ matrix
     }
   }
   pub fn get(&self, row:usize, col:usize) -> Option<&T> {
-    if self.rows < row || self.cols < col {
-      return None
+    if self.rows <= row || self.cols <= col {
+      return None;
     }
     Some(&self.data[row * self.cols + col])
   }
   pub fn set(&mut self, row:usize, col:usize, input:T) -> Result<(),String> {
-    if self.rows < row && self.cols < col {
+    if self.rows <= row || self.cols <= col {
       return Err("Dumbass, how tf did you break the set fn for the matrix?".to_string())
     }
     self.data[row * self.cols + col] = input;
@@ -104,8 +104,8 @@ enum Move {
 
 impl Ball {
   fn new(center:Vec2) -> Self {
-    let x = rand::gen_range(-10.0, 10.0);
-    let y = rand::gen_range(-10.0, 10.0);
+    let x = rand::gen_range(-5.0, 5.0);
+    let y = rand::gen_range(-5.0, 5.0);
     let vel = Vec2::new(x, y);    
     Ball {
       vel,
@@ -215,12 +215,12 @@ impl PongGame {
         } else { 
           self.current_frame.set(
             0,
-            self.current_frame.cols, 
+            self.current_frame.cols - 1, 
             true
           ).unwrap_or_default(); 
           self.current_frame.set(
             0, 
-            self.current_frame.cols - 1, 
+            self.current_frame.cols - 2, 
             true
           ).unwrap_or_default();
           self.paddle_col = self.current_frame.cols - 1;                                   
@@ -228,24 +228,52 @@ impl PongGame {
       },
       Move::Up => {
         if let Some(_) = self.current_frame.get(
-          0, 
-          self.paddle_col.saturating_sub(1),
+          0,
+          self.paddle_col.saturating_sub(1), 
         ) {
-          // If this is a valid place on the map (and it should be always)
+          // If this is a valid place on the map, then:
           self.current_frame.set(
-          0, 
-          self.paddle_col.saturating_sub(1),
-          true
-        ).unwrap_or_default();
+            0, 
+            self.paddle_col.saturating_sub(1), 
+            true
+          ).unwrap_or_default();
           self.current_frame.set(
             0, 
             self.paddle_col.saturating_sub(1) + 1,
             true
           ).unwrap_or_default();
+          self.paddle_col = self.paddle_col.saturating_sub(1);
 
-        } else {panic!("somehow the matrix doesn't have a (0,0) cord?")}
+        } else { 
+          self.current_frame.set(
+            0,
+            0, 
+            true
+          ).unwrap_or_default(); 
+          self.current_frame.set(
+            0, 
+            1, 
+            true
+          ).unwrap_or_default();
+          self.paddle_col = 0;                                   
+        }
       },
-      Move::None => return,
+      Move::None => {}
+    }
+    if let Some(_) = self.current_frame.get(
+    0,
+    self.paddle_col + 1, 
+    ) {
+      self.current_frame.set(
+        0,
+        self.paddle_col,
+        true
+      ).unwrap_or_default();
+      self.current_frame.set(
+        0,
+        self.paddle_col + 1,
+        true
+      ).unwrap_or_default();
     }
   }
   fn draw(&self) {
