@@ -27,8 +27,8 @@ async fn main() {
       break;
     }
     // Brain thinking
-    let outputs = brain.tick(Some(29));
-    let direction = dbg!(game.output_to_moves(outputs));
+    let outputs = brain.tick(Some(10));
+    let direction = game.output_to_moves(outputs);
     // Drawing a frame
     { 
     
@@ -128,8 +128,8 @@ enum Reward {
 
 impl Ball {
   fn new(center:Vec2) -> Self {
-    let x = rand::gen_range(-10.0, 10.0);
-    let y = rand::gen_range(-10.0, 10.0);
+    let x = rand::gen_range(-5.0, 5.0);
+    let y = rand::gen_range(-5.0, 5.0);
     let vel = Vec2::new(x, y);    
     Ball {
       vel,
@@ -226,7 +226,7 @@ impl PongGame {
       Move::Down => {
         if let Some(_) = self.current_frame.get(
           0,
-          self.paddle_col + direction.1 + 1, 
+          self.paddle_col + direction.1 + 1,
         ) {
           // If this is a valid place on the map, then:
           self.current_frame.set(
@@ -236,9 +236,10 @@ impl PongGame {
           ).unwrap_or_default();
           self.current_frame.set(
             0, 
-            self.paddle_col+ direction.1,
+            self.paddle_col + direction.1,
             true
           ).unwrap_or_default();
+
           self.paddle_col = self.paddle_col + direction.1
 
         } else { 
@@ -252,31 +253,59 @@ impl PongGame {
             self.current_frame.cols - 2, 
             true
           ).unwrap_or_default();
-          self.paddle_col = self.current_frame.cols - 2;                                   
+          self.paddle_col = self.current_frame.cols - 1;                                   
         }
       },
       Move::Up => {
         if let Some(_) = self.current_frame.get(
-          0, 
-          self.paddle_col.saturating_sub(direction.1),
+          0,
+          self.paddle_col.saturating_sub(direction.1), 
         ) {
-          // If this is a valid place on the map (and it should be always)
+          // If this is a valid place on the map, then:
           self.current_frame.set(
-          0, 
-          self.paddle_col.saturating_sub(direction.1),
-          true
-        ).unwrap_or_default();
+            0, 
+            self.paddle_col.saturating_sub(direction.1), 
+            true
+          ).unwrap_or_default();
           self.current_frame.set(
             0, 
             self.paddle_col.saturating_sub(direction.1) + 1,
             true
           ).unwrap_or_default();
-
-        } else {unreachable!("Somehow, the matrix doesn't have a (0,0) cord?")}
+          self.paddle_col = self.paddle_col.saturating_sub(direction.1);
+        } else { 
+          self.current_frame.set(
+            0,
+            0, 
+            true
+          ).unwrap_or_default(); 
+          self.current_frame.set(
+            0, 
+            1, 
+            true
+          ).unwrap_or_default();
+          self.paddle_col = 0;                                   
+        }
       },
-      Move::None => return,
+      Move::None => {},
+    }
+    if let Some(_) = self.current_frame.get(
+    0,
+    self.paddle_col + 1, 
+    ) {
+      self.current_frame.set(
+        0,
+        self.paddle_col,
+        true
+      ).unwrap_or_default();
+      self.current_frame.set(
+        0,
+        self.paddle_col + 1,
+        true
+      ).unwrap_or_default();
     }
   }
+  
   fn draw(&self) {
     let length = self.pixle_size;
     for xcell in 0..self.current_frame.rows {
