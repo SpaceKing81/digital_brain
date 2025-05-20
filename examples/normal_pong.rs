@@ -1,6 +1,4 @@
 use macroquad::{prelude::*};
-use digital_brain::Brain;
-use digital_brain::MAX_THRESHOLD;
 
 fn window_conf() -> Conf {
     Conf {
@@ -13,11 +11,7 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let (mut brain,inputs, outputs) = Brain::spin_up_new(1500, 25, 2);
-  let mut game = PongGame::new(5, inputs, outputs);
-  
-  let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();
-  brain.brain_input(initial_pos);
+  let mut game = PongGame::new(5);
 
   // Main loop
   loop {
@@ -26,24 +20,15 @@ async fn main() {
       println!("Terminating");
       break;
     }
-    // Brain thinking
-    let outputs = brain.tick(Some(29));
-    let direction = game.output_to_moves(dbg!(outputs));
     // Drawing a frame
     { 
     
     // Clear the screen
     clear_background(BLACK);
 
-    let outcome = game.progress_frame(direction);
-    match outcome {
-      Reward::Pain => {brain.pain(None);},
-      Reward::Plesure => {brain.reward(None);},
-      Reward::Null => {},
-    }
+    game.progress_frame((Move::None, 0));
     // Draw Game
     game.draw();
-    brain.brain_input(game.frame_to_inputs());
 
     // Draw FPS and other info
     // draw_text(
@@ -100,8 +85,6 @@ matrix
 
 struct PongGame {
   current_frame:Matrix<bool>,
-  input_list:Vec<u128>,
-  output_list:Vec<u32>,
   ball:Ball,
   paddle_col:usize,
   score:usize,
@@ -116,11 +99,6 @@ enum Move {
   Up,
   Down,
   None,
-}
-enum Reward {
-  Null,
-  Pain,
-  Plesure,
 }
 
 
@@ -146,11 +124,9 @@ impl Ball {
 }
 
 impl PongGame {
-  fn new(game_size:usize, input_list: Vec<u128>, output_list:Vec<u32>) -> Self {
+  fn new(game_size:usize) -> Self {
     let mut new = PongGame { 
       current_frame: Matrix::new(game_size, false), 
-      input_list,
-      output_list,
       ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }), 
       paddle_col:0,
       score: 0, 
@@ -162,9 +138,8 @@ impl PongGame {
     new.current_frame.set(0,1, true).unwrap_or_default();
     new
   }
-  fn progress_frame(&mut self, direction:(Move,usize)) -> Reward {
-    let mut score = Reward::Null;
-    self.move_paddle(direction);
+  fn progress_frame(&mut self, direction:(Move,usize))  {
+    // self.move_paddle(direction);
     let (row,col) = self.get_ball_pos();
     if let Some(_) = self.current_frame.get(
       row,
@@ -176,10 +151,10 @@ impl PongGame {
       false,
     ).unwrap_or_default();
   }
-    
+
+
     if self.ball_hit_paddle(row, col) {
       self.ball.bounce_left_right(); 
-      score = Reward::Plesure
     }
     if (col + 1) == self.current_frame.cols || col == 0 {
       self.ball.bounce_top_bottom();
@@ -187,7 +162,7 @@ impl PongGame {
     if (row + 1) == self.current_frame.rows || row == 0 {
       self.ball.bounce_left_right();
     }
-    if row == 0 { self.score +=1; score = Reward::Pain; }
+    if row == 0 { self.score +=1; }
     
     self.ball.forward();
     let (row,col) = self.get_ball_pos();
@@ -201,8 +176,6 @@ impl PongGame {
       true,
     ).unwrap_or_default();
   }
-    
-    score
   }
   fn move_paddle(&mut self, direction:(Move,usize)) {
     if let Some(_) = self.current_frame.get(
@@ -284,28 +257,12 @@ impl PongGame {
           draw_rectangle((xcell as f32) * length, (ycell as f32) * length, length, length, color);
         }}}
   }
-  fn frame_to_inputs(&self) -> Option<Vec<(u128,i32)>> {
-    let current_data: &Vec<bool> = &self.current_frame.data;
-    let inputs: &Vec<u128> = &self.input_list;
-    if current_data.len() != inputs.len() { dbg!(inputs.len(), current_data.len());panic!("The input-length and data length are different sizes") }
-    let mut outputs:Vec<(u128,i32)> = Vec::new();
-    for idx in 0..inputs.len() {
-      if current_data[idx] { 
-        outputs.push((
-          inputs[idx],
-          MAX_THRESHOLD
-        ));
-      }
-    }
-    if outputs.is_empty() {return None;}
-    Some(outputs)
-  }
+ 
   fn get_ball_pos(&self) -> (usize,usize) {
     let ballx = self.ball.pos.x;
     let bally = self.ball.pos.y;
     (self.pixle_to_grid(ballx), self.pixle_to_grid(bally))
     // x->col, y->row
-
   }
   fn ball_hit_paddle(&self, row:usize, col:usize) -> bool {
     if row != 1 {return false;}
@@ -314,25 +271,6 @@ impl PongGame {
     } 
     panic!("Ball left grid");
   }
-  fn output_to_moves(&self, output:Option<Vec<u32>>) -> (Move,usize) {
-    let mut up: i32 = 0;
-    if let Some(out) = output {
-      for i in out {
-        // Move Up
-        if i == self.output_list[0] {up += 1;}
-
-        // Move Down
-        if i == self.output_list[1] {up -= 1;}
-      }
-
-      if up == 0 {return (Move::None, 0);}
-      if up.is_positive() {return (Move::Up, up as usize);}
-      if up.is_negative() {return (Move::Down, up.abs() as usize);}
-
-      panic!("Just...how can a number not be pos, neg, or 0???")
-    }
-    (Move::None, 0)
-}
   fn pixle_to_grid(&self, pixle:f32) -> usize {
     (pixle/self.pixle_size).floor() as usize
   }
