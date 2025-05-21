@@ -34,8 +34,6 @@ const STARTING_NEURONS:Option<u32> = None;
 use std::collections::HashMap;
 use macroquad::prelude::*;
 use digital_brain::{Spirion,MAX_THRESHOLD};
-/// Calculate Modulus operations
-// fn modulo<T>(a: T, b: T) -> T where T: std::ops::Rem<Output = T> + std::ops::Add<Output = T> + Copy, {((a % b) + b) % b}
 
 fn window_conf() -> Conf {
     Conf {
@@ -95,11 +93,15 @@ const CLICKABLE_KEYS:[KeyCode;42] = [
     KeyCode::Enter,
     KeyCode::Backspace
 ];
-// const IDEAL_TPS:f64 = 60.0;
+
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    // Get name
+    let user_name="User".to_string();
     
+
+
     // Initialize the brain
     println!("Starting simulation...");
     let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
@@ -172,20 +174,34 @@ async fn main() {
             20.,
             WHITE,
         );
+        draw_text(
+                &format!("{}", user_name),
+                screen_width() - 500.,
+                25.0,
+                20.,
+                WHITE,
+            );
         for i in 0..type_text.len() {
             draw_text(
                 &format!("{}",type_text[i]),
                 screen_width() - 500.,
-                i as f32 * 12. + 20.,
+                i as f32 * 12. + 37.,
                 20.,
                 WHITE,
             );
         }
+        draw_text(
+                &format!("Spirion"),
+                25.0,
+                25.0,
+                20.,
+                SPIRION_TEXT_COLOR,
+            );
         for i in 0..thought_text.len() {
             draw_text(
                 &format!("{}", thought_text[i]),
                 25.0,
-                i as f32 * 12. + 20.,
+                i as f32 * 12. + 37.,
                 20.,
                 SPIRION_TEXT_COLOR,
             );
@@ -369,7 +385,7 @@ fn type_to_fused_text(mut current_text:Vec<String>) -> Vec<String>{
 TODO:
 - forgot this exists, haven't looked at it in forever. Last time looking at this:
     - May 20 2025
-    -
+    - May 21 2025
 
 
 NOTES:
