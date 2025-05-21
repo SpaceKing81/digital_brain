@@ -19,7 +19,7 @@ fn window_conf() -> Conf {
 const STARTING_NEURONS:u32 = 100;
 const STARTING_INPUTS:u128 = 32;
 const STARTING_OUTPUTS:u32 = 32;
-const SPIRION_TEXT_COLOR:Color = Color::new(0.9, 0.3, 0.0, 0.5);
+const SPIRION_TEXT_COLOR:Color = Color::new(0.9, 0.3, 0.0, 0.75);
 const CLICKABLE_KEYS:[KeyCode;32] = [
     KeyCode::Space,
     KeyCode::Apostrophe,
@@ -72,7 +72,7 @@ async fn main() {
         STARTING_OUTPUTS
     );
     let mut thought_text:Vec<String> = Vec::new();
-    let mut type_text:Vec<String> = Vec::new();
+    let mut type_text:Vec<String> = vec![String::new()];
     
     // Main loop
     loop {
@@ -114,6 +114,13 @@ async fn main() {
 
         // Clear the screen
         clear_background(BLACK);
+        while type_text.len() > 60 {
+            type_text.remove(0);
+        }
+        while thought_text.len() > 60 {
+            thought_text.remove(0);
+        }
+
         // Update and draw neurons and axons
         brain.render(center);
         // Draw Text
@@ -126,21 +133,21 @@ async fn main() {
         );
         for i in 0..type_text.len() {
             draw_text(
-                &format!("{}", type_text[i]),
-                20.,
-                i as f32 * 10. + 20.,
+                &format!("{}",type_text[i]),
+                screen_width() - 500.,
+                i as f32 * 12. + 20.,
                 20.,
                 WHITE,
             );
         }
         for i in 0..thought_text.len() {
             draw_text(
-                    &format!("{}", thought_text[i]),
-                    20.,
-                    i as f32 * 10. + 20.,
-                    20.,
-                    SPIRION_TEXT_COLOR,
-                );
+                &format!("{}", thought_text[i]),
+                25.0,
+                i as f32 * 12. + 20.,
+                20.,
+                SPIRION_TEXT_COLOR,
+            );
         }
 
         }
@@ -237,7 +244,7 @@ fn keycode_to_char(key: KeyCode) -> Option<char> {
         Space => ' ',
         Comma => ',',
         Period => '.',
-        Apostrophe => ',',
+        Apostrophe => '\'',
         _ => return None,
     };
 
@@ -288,22 +295,22 @@ fn type_to_fused_text(mut current_text:Vec<String>) -> Vec<String>{
         if i == '|' {continue;}
         if i == '+' {current_text.push(String::new());}
         if let Some(current_string) = current_text.last_mut() {
+            if current_string.is_empty() && i == '-' {
+                full_chop = true;
+            }
             if i == '-' && !current_string.is_empty() {
                 current_string.pop();
-            }
-            if current_string.is_empty() {
-                full_chop = true;
             }
             if i != '+' && i != '-' && i != '|' {
                 current_string.push(i);
             }
         }
-        
+        if full_chop {
+            current_text.pop();
+        }
+        full_chop = false; 
     }
-
-
-
-        todo!();
+    current_text
 }
 
 
