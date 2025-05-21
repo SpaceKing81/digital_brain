@@ -43,7 +43,10 @@ impl Spirion {
       active_neurons:HashSet::new(),
     }
   }
-  pub fn spin_up_new(num_neurons: u32, num_input: u128, num_output: u32) -> (Self, Vec<u128>, Vec<u32>) {
+  /// New brain with specifed inputs and outputs, optional number of Neurons.
+  /// Default is 500 Neurons
+  pub fn spin_up_new(num_neurons: Option<u32>, num_input: u128, num_output: u32) -> (Self, Vec<u128>, Vec<u32>) {
+    let num_neurons = num_neurons.unwrap_or(500);
     // Step 0: Create Brain
     let mut brain = Self::new();
     

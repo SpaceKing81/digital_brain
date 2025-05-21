@@ -1,3 +1,28 @@
+
+
+
+
+
+/*
+
+README: Literally normal Pong. Game size can be changed to whichever size of game you
+want to play, default is a 30 x 30 grid, where None = Some(30)
+
+TO RUN - Paste into terminal the following line:
+cargo run --example normal_pong
+
+*/
+
+
+const GAME_SIZE:Option<usize> = None;
+
+
+
+
+
+
+
+
 use macroquad::{prelude::*};
 
 fn window_conf() -> Conf {
@@ -11,7 +36,7 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let mut game = PongGame::new(30);
+  let mut game = PongGame::new(GAME_SIZE);
 
   // Main loop
   loop {
@@ -124,13 +149,13 @@ impl Ball {
 }
 
 impl PongGame {
-  fn new(game_size:usize) -> Self {
+  fn new(game_size:Option<usize>) -> Self {
     let mut new = PongGame { 
-      current_frame: Matrix::new(game_size, false), 
+      current_frame: Matrix::new(game_size.unwrap_or(30), false), 
       ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }), 
       paddle_col:0,
       score: 0, 
-      pixle_size: pixle_size_calculator(game_size),
+      pixle_size: pixle_size_calculator(game_size.unwrap_or(30)),
     };
     let (row, col) = new.get_ball_pos();
     new.current_frame.set(row, col, true).unwrap_or_default();

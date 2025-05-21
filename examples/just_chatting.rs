@@ -1,8 +1,39 @@
+
+/*
+
+README: Runs a simulation of the brain itself, color coded for the neurons and axion connections.
+Colors:
+    - Red connections mean inhibitory
+    - Green axions mean exitory
+    - Gray mean 0, null, no effect
+    - Scarlet red axions connected to the keyboard represent the input channels 
+    - Blue neurons are output sinks
+
+Capable of communicating with the brain using keyboard. Type whatever you want, and you can see
+what Spirion says. White number in the top middle represents the frame-rate
+
+Your choice on how large the brain is, default is 500 neurons
+
+TO RUN - Paste into terminal the following line:
+cargo run --example just_chatting
+
+*/
+
+const STARTING_NEURONS:Option<u32> = None;
+
+
+
+
+
+
+
+
+
+
+
 use std::collections::HashMap;
 use macroquad::prelude::*;
-use digital_brain::Spirion;
-use digital_brain::MAX_THRESHOLD;
-
+use digital_brain::{Spirion,MAX_THRESHOLD};
 /// Calculate Modulus operations
 // fn modulo<T>(a: T, b: T) -> T where T: std::ops::Rem<Output = T> + std::ops::Add<Output = T> + Copy, {((a % b) + b) % b}
 
@@ -16,7 +47,7 @@ fn window_conf() -> Conf {
 }
 
 
-const STARTING_NEURONS:u32 = 500;
+
 const STARTING_INPUTS:u128 = 42;
 const STARTING_OUTPUTS:u32 = 42;
 const SPIRION_TEXT_COLOR:Color = Color::new(0.9, 0.3, 0.0, 0.75);

@@ -1,6 +1,29 @@
+
+
+
+
+
+
+/*
+README: This pong is played by Spirion. No user input, but you can chose the size of the game,
+along with the size of the brain (number of neurons initialized with)
+
+TO RUN - Paste into terminal the following line:
+cargo run --example pong
+*/
+
+const GAME_SIZE:usize = 30;
+const BRAIN_SIZE:Option<u32> = Some(1500);
+
+
+
+
+
+
 use macroquad::{prelude::*};
 use digital_brain::Spirion;
 use digital_brain::MAX_THRESHOLD;
+
 
 fn window_conf() -> Conf {
     Conf {
@@ -13,8 +36,8 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let (mut brain,inputs, outputs) = Spirion::spin_up_new(1500, 100, 2);
-  let mut game = PongGame::new(10, inputs, outputs);
+  let (mut brain,inputs, outputs) = Spirion::spin_up_new(BRAIN_SIZE, (GAME_SIZE*GAME_SIZE) as u128, 2);
+  let mut game = PongGame::new(GAME_SIZE, inputs, outputs);
   
   let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();
   brain.brain_input(initial_pos);
