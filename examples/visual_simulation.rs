@@ -1,7 +1,6 @@
 use std::collections::HashMap;
-
 use macroquad::prelude::*;
-use digital_brain::Brain;
+use digital_brain::Spirion;
 use digital_brain::MAX_THRESHOLD;
 
 /// Calculate Modulus operations
@@ -20,6 +19,7 @@ fn window_conf() -> Conf {
 const STARTING_NEURONS:u32 = 100;
 const STARTING_INPUTS:u128 = 32;
 const STARTING_OUTPUTS:u32 = 32;
+const SPIRION_TEXT_COLOR:Color = Color::new(0.9, 0.3, 0.0, 0.5);
 const CLICKABLE_KEYS:[KeyCode;32] = [
     KeyCode::Space,
     KeyCode::Apostrophe,
@@ -66,7 +66,7 @@ async fn main() {
         mut brain, 
         inputs, 
         outputs
-    ) = Brain::spin_up_new(
+    ) = Spirion::spin_up_new(
         STARTING_NEURONS,
         STARTING_INPUTS, 
         STARTING_OUTPUTS
@@ -81,15 +81,11 @@ async fn main() {
             println!("Terminating Brain...");
             break;
         }
-
+        // Get keystrokes
         let data = keys_to_input(&inputs);
-        if let Some(c) = get_char_pressed() {
-            type_text.push(c);
-            // needs to be another check to edit the buried string
-        }
-        if is_key_released(KeyCode::Enter) {
-            type_text.push(String::new());
-        }
+        type_text = type_to_fused_text(type_text);
+        
+        
         // Update the brain
         brain.brain_input(data.inputs);
 
@@ -98,7 +94,19 @@ async fn main() {
             brain.tick(Some(29))
         );
         let refined_output = convert_to_strings(raw_output);
-        
+        let mut bridge = String::new();
+        if let Some(mut tbadded) = refined_output {
+            if let Some(middle_last) = tbadded.first() {
+                if let Some(first_middle) = thought_text.last() {
+                    bridge.push_str(&first_middle);
+                    bridge.push_str(&middle_last);
+                }
+            }
+            tbadded.remove(0);
+            thought_text.pop();
+            thought_text.push(bridge);
+            thought_text.append(&mut tbadded);
+        }
         
 
         // Drawing a frame
@@ -108,21 +116,32 @@ async fn main() {
         clear_background(BLACK);
         // Update and draw neurons and axons
         brain.render(center);
-        // Draw FPS and other info
+        // Draw Text
         draw_text(
-            &format!("FPS: {}, Clock: {}", get_fps(),brain.clock),
-            20.,
+            &format!("{}", get_fps()),
+            screen_width()/2.0,
             20.,
             20.,
             WHITE,
         );
-        // draw_text(
-        //     &format!("{:?}", text),
-        //     20.,
-        //     40.,
-        //     20.,
-        //     WHITE,
-        // );
+        for i in 0..type_text.len() {
+            draw_text(
+                &format!("{}", type_text[i]),
+                20.,
+                i as f32 * 10. + 20.,
+                20.,
+                WHITE,
+            );
+        }
+        for i in 0..thought_text.len() {
+            draw_text(
+                    &format!("{}", thought_text[i]),
+                    20.,
+                    i as f32 * 10. + 20.,
+                    20.,
+                    SPIRION_TEXT_COLOR,
+                );
+        }
 
         }
         // Render the frame
@@ -246,12 +265,46 @@ fn convert_to_strings(raw:Option<Vec<KeyCode>>) -> Option<Vec<String>> {
                 _ => panic!("Something slipped through the keycode->char fn")
             }
         }
-
     }
-    
-    todo!();
+    if refined.is_empty() {
+        return None;
+    }
+    Some(refined)
 }
+fn type_to_fused_text(mut current_text:Vec<String>) -> Vec<String>{
+    let key = get_keys_released();
+    let keys:Vec<char> = key.into_iter().map(|key|
+        if let Some(ch) = keycode_to_char(key) {
+            ch
+        } else if key == KeyCode::Enter || key == KeyCode::Backspace {
+            if key == KeyCode::Enter {'+'}
+            else {'-'}
+        } else {
+            '|'
+        }
+    ).collect();
+    let mut full_chop = false;
+    for i in keys {
+        if i == '|' {continue;}
+        if i == '+' {current_text.push(String::new());}
+        if let Some(current_string) = current_text.last_mut() {
+            if i == '-' && !current_string.is_empty() {
+                current_string.pop();
+            }
+            if current_string.is_empty() {
+                full_chop = true;
+            }
+            if i != '+' && i != '-' && i != '|' {
+                current_string.push(i);
+            }
+        }
+        
+    }
 
+
+
+        todo!();
+}
 
 
 /*

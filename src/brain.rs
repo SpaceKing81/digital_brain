@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Brain {
+pub struct Spirion {
   pub clock:u128,
 
   neurons: HashMap<u32, Neuron>,
@@ -26,9 +26,9 @@ pub struct Brain {
   active_neurons:HashSet<u32>,
 }
 
-impl Brain {
+impl Spirion {
   fn new() -> Self {
-    Brain {
+    Spirion {
       clock:0,
 
       neurons: HashMap::new(),
@@ -192,7 +192,7 @@ impl Brain {
 }
 
 /// Mechanics
-impl Brain {
+impl Spirion {
   fn spring_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
     if id1 != id2 {return None}
     let pos1 = self.neurons[&id1].position;
@@ -232,7 +232,7 @@ impl Brain {
 }
 
 /// Graphics
-impl Brain {
+impl Spirion {
   pub fn render(&mut self, center: Vec2) {
     let mut neurons_to_remove: Vec<u32> = Vec::new();
     let mut axions_to_remove: Vec<u128> = Vec::new();
@@ -325,7 +325,7 @@ impl Brain {
 
 
 
-impl Brain {
+impl Spirion {
   fn no_more_outputs(&mut self, neuron_id: u32) {
     if let Some(neuron) = self.neurons.get(&neuron_id) {
       if neuron.is_output {return;}

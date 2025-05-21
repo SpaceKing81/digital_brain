@@ -1,5 +1,5 @@
 use macroquad::{prelude::*};
-use digital_brain::Brain;
+use digital_brain::Spirion;
 use digital_brain::MAX_THRESHOLD;
 
 fn window_conf() -> Conf {
@@ -13,7 +13,7 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let (mut brain,inputs, outputs) = Brain::spin_up_new(1500, 100, 2);
+  let (mut brain,inputs, outputs) = Spirion::spin_up_new(1500, 100, 2);
   let mut game = PongGame::new(10, inputs, outputs);
   
   let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();

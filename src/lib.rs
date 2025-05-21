@@ -6,7 +6,7 @@ mod neuron;
 mod consts;
 
 // re-export your main Brain type at the crate root:
-pub use brain::Brain;
+pub use brain::Spirion;
 pub use consts::*;
 
 #[cfg(test)]
