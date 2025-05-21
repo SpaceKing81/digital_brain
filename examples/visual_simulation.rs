@@ -61,7 +61,6 @@ async fn main() {
     
     // Initialize the brain
     println!("Starting simulation...");
-    let mut ticks = 0.0;
     let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
     let (
         mut brain, 
@@ -72,7 +71,8 @@ async fn main() {
         STARTING_INPUTS, 
         STARTING_OUTPUTS
     );
-    let mut text: Vec<KeyCode> = Vec::new();
+    let mut thought_text:Vec<String> = Vec::new();
+    let mut type_text:Vec<String> = Vec::new();
     
     // Main loop
     loop {
@@ -81,18 +81,24 @@ async fn main() {
             println!("Terminating Brain...");
             break;
         }
-        let data = keys_to_input(&inputs);
 
+        let data = keys_to_input(&inputs);
+        if let Some(c) = get_char_pressed() {
+            type_text.push(c);
+            // needs to be another check to edit the buried string
+        }
+        if is_key_released(KeyCode::Enter) {
+            type_text.push(String::new());
+        }
         // Update the brain
         brain.brain_input(data.inputs);
 
-        if let Some(mut output) = 
-        output_to_keys(
-            &outputs,brain.tick(Some(29))
-        )
-        .outputs {
-            text.append(&mut output);
-        }
+        let raw_output = output_to_keys(
+            &outputs,
+            brain.tick(Some(29))
+        );
+        let refined_output = convert_to_strings(raw_output);
+        
         
 
         // Drawing a frame
@@ -104,19 +110,19 @@ async fn main() {
         brain.render(center);
         // Draw FPS and other info
         draw_text(
-            &format!("Clock {}", brain.clock),
+            &format!("FPS: {}, Clock: {}", get_fps(),brain.clock),
             20.,
             20.,
             20.,
             WHITE,
         );
-        draw_text(
-            &format!("{:?}", text),
-            20.,
-            40.,
-            20.,
-            WHITE,
-        );
+        // draw_text(
+        //     &format!("{:?}", text),
+        //     20.,
+        //     40.,
+        //     20.,
+        //     WHITE,
+        // );
 
         }
         // Render the frame
@@ -126,7 +132,7 @@ async fn main() {
 
 struct Data {
     inputs:Option<Vec<(u128,i32)>>,
-    outputs:Option<Vec<KeyCode>>,
+    // outputs:Option<Vec<KeyCode>>,
 }
 
 fn keys_to_input(inputs:&Vec<u128>) -> Data {
@@ -139,41 +145,36 @@ fn keys_to_input(inputs:&Vec<u128>) -> Data {
         a += 1;
     }
     if !input.is_empty() {
-        return Data {inputs:Some(input), outputs:None}
+        return Data {inputs:Some(input)}
     }
     Data {
         inputs:None,
-        outputs:None,
+        // outputs:None,
     }
 }
-fn output_to_keys(outputs:&Vec<u32>, thoughts:Option<Vec<u32>>) -> Data {
+fn output_to_keys(outputs:&Vec<u32>, thoughts:Option<Vec<u32>>) -> Option<Vec<KeyCode>> {
     if let Some(thoughts) = thoughts {
-    let mut tokens:HashMap<u32,Vec<usize>> = HashMap::new();
-    
-    for i in 0..thoughts.len() {
-        if let Some(letter) = tokens.get_mut(&thoughts[i]) {
-            letter.push(i);
-        } else {
-            tokens.insert(thoughts[i], vec![i]);
+        let mut tokens:HashMap<u32,Vec<usize>> = HashMap::new();
+        
+        for i in 0..thoughts.len() {
+            if let Some(letter) = tokens.get_mut(&thoughts[i]) {
+                letter.push(i);
+            } else {
+                tokens.insert(thoughts[i], vec![i]);
+            }
         }
-    }
 
-    let mut key_converted: Vec<(usize,KeyCode)> = Vec::new();
-    for (letter_code, spot) in tokens {
-        let letter = convert_to_key(outputs, letter_code);
-        for s in spot {
-            key_converted.push((s,letter));
+        let mut key_converted: Vec<(usize,KeyCode)> = Vec::new();
+        for (letter_code, spot) in tokens {
+            let letter = convert_to_key(outputs, letter_code);
+            for s in spot {
+                key_converted.push((s,letter));
+            }
         }
-    }
-    key_converted.sort_by_key(|&(idx, _)| idx);
-    let (_, outputs):(Vec<usize>,Vec<KeyCode>) = key_converted.into_iter().unzip();
-    return Data {inputs:None,outputs:Some(outputs)};
-}
-    
-    Data {
-        inputs:None,
-        outputs:None,
-    }  
+        key_converted.sort_by_key(|&(idx, _)| idx);
+        let (_, outputs):(Vec<usize>,Vec<KeyCode>) = key_converted.into_iter().unzip();
+        return Some(outputs);
+    } None
 }
 fn convert_to_key(outputs:&Vec<u32>, letter:u32) -> KeyCode {
     for i in 0..outputs.len() {
@@ -223,7 +224,33 @@ fn keycode_to_char(key: KeyCode) -> Option<char> {
 
     Some(base)
 }
-fn keycode_to_action(key: KeyCode) -> Option<char> {todo!()}
+fn convert_to_strings(raw:Option<Vec<KeyCode>>) -> Option<Vec<String>> {
+    if raw == None {return None}
+    let mut refined:Vec<String> = vec![String::new()];
+
+    for i in raw.unwrap() {
+        if let Some(ch) = keycode_to_char(i) {
+            if let Some(current) = refined.last_mut() {
+                current.push(ch);
+            }
+        } else {
+            match i {
+                KeyCode::Backspace => {
+                    if let Some(current) = refined.last_mut() {
+                        current.pop();
+                    } else {
+                        refined.pop();
+                    }
+                },
+                KeyCode::Enter => refined.push(String::new()),
+                _ => panic!("Something slipped through the keycode->char fn")
+            }
+        }
+
+    }
+    
+    todo!();
+}
 
 
 

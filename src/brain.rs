@@ -435,15 +435,15 @@ impl Brain {
     }
   }
 
-  fn input_is_valid(&self, input:&Axion) -> bool {
-    if self.axions.contains_key(&input.id) {
-      return true
-    }
-    if self.neurons.contains_key(&input.id_sink) {
-      return true;
-    }
-    false
-  }
+  // fn input_is_valid(&self, input:&Axion) -> bool {
+  //   if self.axions.contains_key(&input.id) {
+  //     return true
+  //   }
+  //   if self.neurons.contains_key(&input.id_sink) {
+  //     return true;
+  //   }
+  //   false
+  // }
 }
 
 

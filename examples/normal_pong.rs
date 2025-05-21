@@ -155,6 +155,7 @@ impl PongGame {
 
     if self.ball_hit_paddle(row, col) {
       self.ball.bounce_left_right(); 
+      self.score +=1;
     }
     if (col + 1) == self.current_frame.cols || col == 0 {
       self.ball.bounce_top_bottom();
@@ -162,7 +163,6 @@ impl PongGame {
     if (row + 1) == self.current_frame.rows || row == 0 {
       self.ball.bounce_left_right();
     }
-    if row == 0 { self.score +=1; }
     
     self.ball.forward();
     let (row,col) = self.get_ball_pos();

@@ -13,8 +13,8 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let (mut brain,inputs, outputs) = Brain::spin_up_new(1500, 25, 2);
-  let mut game = PongGame::new(5, inputs, outputs);
+  let (mut brain,inputs, outputs) = Brain::spin_up_new(1500, 100, 2);
+  let mut game = PongGame::new(10, inputs, outputs);
   
   let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();
   brain.brain_input(initial_pos);
