@@ -6,13 +6,13 @@
 
 /*
 README: This pong is played by Spirion. No user input, but you can chose the size of the game,
-along with the size of the brain (number of neurons initialized with)
+along with the size of the brain (number of neurons initialized with).
 
 TO RUN - Paste into terminal the following line:
 cargo run --example pong
 */
 
-const GAME_SIZE:usize = 30;
+const GAME_SIZE:Option<usize> = Some(30);
 const BRAIN_SIZE:Option<u32> = Some(1500);
 
 
@@ -36,7 +36,7 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let (mut brain,inputs, outputs) = Spirion::spin_up_new(BRAIN_SIZE, (GAME_SIZE*GAME_SIZE) as u128, 2);
+  let (mut brain,inputs, outputs) = Spirion::spin_up_new(BRAIN_SIZE, (GAME_SIZE.unwrap_or(30)*GAME_SIZE.unwrap_or(30)) as u128, 2);
   let mut game = PongGame::new(GAME_SIZE, inputs, outputs);
   
   let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();
@@ -171,7 +171,8 @@ impl Ball {
 }
 
 impl PongGame {
-  fn new(game_size:usize, input_list: Vec<u128>, output_list:Vec<u32>) -> Self {
+  fn new(game_size:Option<usize>, input_list: Vec<u128>, output_list:Vec<u32>) -> Self {
+    let game_size = game_size.unwrap_or(30);
     let mut new = PongGame { 
       current_frame: Matrix::new(game_size, false), 
       input_list,
