@@ -16,11 +16,11 @@ fn window_conf() -> Conf {
 }
 
 
-const STARTING_NEURONS:u32 = 100;
-const STARTING_INPUTS:u128 = 32;
-const STARTING_OUTPUTS:u32 = 32;
+const STARTING_NEURONS:u32 = 500;
+const STARTING_INPUTS:u128 = 42;
+const STARTING_OUTPUTS:u32 = 42;
 const SPIRION_TEXT_COLOR:Color = Color::new(0.9, 0.3, 0.0, 0.75);
-const CLICKABLE_KEYS:[KeyCode;32] = [
+const CLICKABLE_KEYS:[KeyCode;42] = [
     KeyCode::Space,
     KeyCode::Apostrophe,
     KeyCode::Comma,
@@ -51,6 +51,16 @@ const CLICKABLE_KEYS:[KeyCode;32] = [
     KeyCode::X,
     KeyCode::Y,
     KeyCode::Z,
+    KeyCode::Key0,
+    KeyCode::Key1,
+    KeyCode::Key2,
+    KeyCode::Key3,
+    KeyCode::Key4,
+    KeyCode::Key5,
+    KeyCode::Key6,
+    KeyCode::Key7,
+    KeyCode::Key8,
+    KeyCode::Key9,
     KeyCode::Enter,
     KeyCode::Backspace
 ];
@@ -91,7 +101,7 @@ async fn main() {
 
         let raw_output = output_to_keys(
             &outputs,
-            brain.tick(Some(29))
+            brain.tick(Some(10))
         );
         let refined_output = convert_to_strings(raw_output);
         let mut bridge = String::new();
@@ -240,6 +250,16 @@ fn keycode_to_char(key: KeyCode) -> Option<char> {
         X  => 'x',
         Y  => 'y',
         Z  => 'z',
+        Key0  => '0',
+        Key1  => '1',
+        Key2  => '2',
+        Key3  => '3',
+        Key4  => '4',
+        Key5  => '5',
+        Key6  => '6',
+        Key7  => '7',
+        Key8  => '8',
+        Key9  => '9',
 
         Space => ' ',
         Comma => ',',
