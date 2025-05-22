@@ -19,7 +19,7 @@ Can run example files as well, currently there are 2 (Technically)
 Run in terminal:
   - cargo run --example just_chatting
   - cargo run --example pong
-  - cargo run --example normal_pong (play yourself)
+  - cargo run --example normal_pong
 
 
 Checkpoints Complete:
