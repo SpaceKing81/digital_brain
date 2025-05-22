@@ -1,12 +1,12 @@
 
 /*
 
-README: Runs a simulation of the brain itself, color coded for the neurons and axion connections.
+README: Runs a simulation of the brain itself, color coded for the neurons and axon connections.
 Colors:
     - Red connections mean inhibitory
-    - Green axions mean exitory
+    - Green axons mean exitory
     - Gray mean 0, null, no effect
-    - Scarlet red axions connected to the keyboard represent the input channels 
+    - Scarlet red axons connected to the keyboard represent the input channels 
     - Blue neurons are output sinks
 
 Capable of communicating with the brain using keyboard. Type whatever you want, and you can see
@@ -394,7 +394,7 @@ and this can then change based on average firing rate. Once the node fires, the 
 on the average rate, and then artificialy boosted by the reload function, which is constant. 
 
 UNKNOWN GOAL: Each node operates individually, running basic calculations continuously like 
-tick and memory increments, and modulating thresholds post firing and slow alteration of axion weights with disuse.
+tick and memory increments, and modulating thresholds post firing and slow alteration of axon weights with disuse.
 Firing functions kick in and the whole system gets activated from semi-dormant state when surpassing threshold,
 pushing an update to all the connected nodes who then possibly update as well.
 

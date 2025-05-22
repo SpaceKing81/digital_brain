@@ -7,7 +7,7 @@ use macroquad::{
 
 use crate::{
   //
-  axion::Axion, neuron::Neuron, internal_consts::*, grid::{grid::*, update_threads::*}
+  axon::Axon, neuron::Neuron, internal_consts::*, grid::{grid::*, update_threads::*}
   //
 };
 
@@ -16,12 +16,12 @@ pub struct Spirion {
   pub clock:u128,
 
   neurons: HashMap<u32, Neuron>,
-  axions: HashMap<u128,Axion>,
+  axons: HashMap<u128,Axon>,
   output_ids: HashSet<u32>,
   input_ids: HashSet<u128>,
 
   num_of_neurons: u32,
-  num_of_axions: u128,
+  num_of_axons: u128,
 
   active_neurons:HashSet<u32>,
 }
@@ -32,12 +32,12 @@ impl Spirion {
       clock:0,
 
       neurons: HashMap::new(),
-      axions: HashMap::new(),
+      axons: HashMap::new(),
       output_ids: HashSet::new(),
       input_ids: HashSet::new(),
 
       num_of_neurons:0,
-      num_of_axions:0,
+      num_of_axons:0,
 
 
       active_neurons:HashSet::new(),
@@ -65,24 +65,24 @@ impl Spirion {
     let neuron_ids: Vec<u32> = brain.neurons.keys().copied().collect();
     let len = neuron_ids.len();
 
-    // Step 2: Connect neurons with axions
+    // Step 2: Connect neurons with axons
     for _ in 0..(num_neurons * 2) {
       let source_id = neuron_ids[rand::gen_range(1, len)];
       let sink_id = neuron_ids[rand::gen_range(1, len)];
       
       if output_ids.contains(&source_id) && !output_ids.contains(&sink_id) {
-        brain.add_axion(sink_id,source_id);
-        brain.num_of_axions += 1;
+        brain.add_axon(sink_id,source_id);
+        brain.num_of_axons += 1;
       } else if source_id != sink_id {
-        brain.add_axion(source_id, sink_id);
-        brain.num_of_axions += 1;
+        brain.add_axon(source_id, sink_id);
+        brain.num_of_axons += 1;
       }
     }
 
     // Identify and mark neurons without outputs
     for id in &neuron_ids[..num_neurons as usize] {
       if let Some(neuron) = brain.neurons.get(id) {
-        if neuron.output_axions.is_empty() && !neuron.is_output {
+        if neuron.output_axons.is_empty() && !neuron.is_output {
           brain.no_more_outputs(*id);
         }
       }
@@ -114,21 +114,21 @@ impl Spirion {
       let active_neurons_to_iter: Vec<u32> = self.active_neurons.drain().collect();
       let active_neurons: HashSet<u32> = active_neurons_to_iter.iter().copied().collect();
       
-      let mut axions_to_remove = Vec::new();
+      let mut axons_to_remove = Vec::new();
       let mut neurons_to_remove= Vec::new();
 
       for neuron_id in active_neurons_to_iter {
         let mut has_input = false;
         if let Some(neuron) = self.neurons.get_mut(&neuron_id) {
           // update the input neuron happyness
-          let input_axions = neuron.input_axions.clone();
+          let input_axons = neuron.input_axons.clone();
           let happyness = neuron.happyness;
-          for axion_id in input_axions {
+          for axon_id in input_axons {
             // Checks to see if there are any inputs to this neuron
-            if self.input_ids.contains(&axion_id) {has_input = true}
+            if self.input_ids.contains(&axon_id) {has_input = true}
 
-            if let Some(axion) = self.axions.get_mut(&axion_id) {
-              axion.update_happyness(happyness);
+            if let Some(axon) = self.axons.get_mut(&axon_id) {
+              axon.update_happyness(happyness);
             }
           }
           // update the neurons
@@ -138,12 +138,12 @@ impl Spirion {
           // check if it should fire
           if neuron.ready_to_fire() {
             let delta_t = neuron.fired();
-            let output_axions = neuron.output_axions.clone();
+            let output_axons = neuron.output_axons.clone();
             // Check if its an output
             if neuron.is_output {output.push(neuron_id);continue;}
-            for axion_id in output_axions {
-              if let Some(axion) = self.axions.get_mut(&axion_id) {
-                let (input_id, strength) = axion.fire_axion(delta_t);
+            for axon_id in output_axons {
+              if let Some(axon) = self.axons.get_mut(&axon_id) {
+                let (input_id, strength) = axon.fire_axon(delta_t);
                 if strength != 0 {
                   // update all the input neuron strength memories
                   if let Some(input_neuron) = self.neurons.get_mut(&input_id) {
@@ -153,11 +153,11 @@ impl Spirion {
                       self.active_neurons.insert(input_id);
                     }
                   }
-                } else {axions_to_remove.push(axion_id);}
+                } else {axons_to_remove.push(axon_id);}
               }}}}}
 
       // remove all inactive neurons
-      for axion_id in axions_to_remove {self.remove_axion(axion_id);}
+      for axon_id in axons_to_remove {self.remove_axon(axon_id);}
       for neuron_id in neurons_to_remove {self.no_more_outputs(neuron_id);}
   }
   if output.is_empty() {
@@ -175,7 +175,7 @@ impl Spirion {
       if !self.input_ids.contains(&input_id) {panic!("Invalid Input id passed in");}
   
       // Collect the neuron id
-      if let Some(input) = self.axions.get(&input_id) {
+      if let Some(input) = self.axons.get(&input_id) {
         let sink = input.id_sink;
         if let Some(neuron) = self.neurons.get_mut(&sink) {
           neuron.inputs.push(strength);
@@ -185,8 +185,8 @@ impl Spirion {
             self.active_neurons.insert(sink);
           }
 
-        } else { panic!("Library Error: Input axion not connected to a present neuron") }
-      } else { panic!("Library Error: Input axion not in axion list") }
+        } else { panic!("Library Error: Input axon not connected to a present neuron") }
+      } else { panic!("Library Error: Input axon not in axon list") }
     }
   }
 
@@ -238,17 +238,17 @@ impl Spirion {
 impl Spirion {
   pub fn render(&mut self, center: Vec2) {
     let mut neurons_to_remove: Vec<u32> = Vec::new();
-    let mut axions_to_remove: Vec<u128> = Vec::new();
+    let mut axons_to_remove: Vec<u128> = Vec::new();
 
     // Step 1: build grid
     let grid = GridCell::build_spatial_grid(&self.neurons);
     // Step 2: do parallel update
     let (
       neuron_updates, 
-      axion_updates
+      axon_updates
       ) = parallel_neuron_step(
         &self.neurons,
-        &self.axions,
+        &self.axons,
         &grid,
         center,
         |id, c| self.center_force(id, c),
@@ -267,18 +267,18 @@ impl Spirion {
         }
     }
 
-    for axion_changes in axion_updates {
-        if let Some(axion) = self.axions.get_mut(&axion_changes.id) {
-            axion.update_happyness(axion_changes.new_happyness);
+    for axon_changes in axon_updates {
+        if let Some(axon) = self.axons.get_mut(&axon_changes.id) {
+            axon.update_happyness(axon_changes.new_happyness);
         }
     }
 
-    // Step 4: Update Axions + Draw
-    for (&id, axion) in self.axions.iter() {
-      if axion.strength == 0 {
-        axions_to_remove.push(id);
+    // Step 4: Update Axons + Draw
+    for (&id, axon) in self.axons.iter() {
+      if axon.strength == 0 {
+        axons_to_remove.push(id);
       }
-      self.draw_axion(axion);
+      self.draw_axon(axon);
     }
 
     // Step 5: Draw neurons
@@ -287,8 +287,8 @@ impl Spirion {
     }
   }
   
-  fn draw_axion(&self, axion:&Axion) {
-    let (source_id, sink_id, color) = axion.get_to_draw();
+  fn draw_axon(&self, axon:&Axon) {
+    let (source_id, sink_id, color) = axon.get_to_draw();
     let (source, sink) = (
       self.neurons.get(&source_id),
       self.neurons.get(&sink_id),
@@ -337,7 +337,7 @@ impl Spirion {
           for _ in 0..roll {
             let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
             if sink_id != neuron_id {
-              self.add_axion(neuron_id, sink_id);
+              self.add_axon(neuron_id, sink_id);
             }
           }
         } else {
@@ -355,7 +355,7 @@ impl Spirion {
           for _ in 0..roll {
             let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
             if sink_id != neuron_id {
-              self.add_axion(neuron_id, sink_id);
+              self.add_axon(neuron_id, sink_id);
             }
           }
         } else {
@@ -380,31 +380,31 @@ impl Spirion {
     id
   }
   
-  fn add_axion(&mut self, source_id: u32, sink_id: u32) -> u128 {
-    self.num_of_axions +=1;
-    let id = self.axions.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    let axion = Axion::new(source_id, sink_id, id, false);
-    self.axions.insert(id, axion);
+  fn add_axon(&mut self, source_id: u32, sink_id: u32) -> u128 {
+    self.num_of_axons +=1;
+    let id = self.axons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
+    let axon = Axon::new(source_id, sink_id, id, false);
+    self.axons.insert(id, axon);
 
     // Update neuron connections
     if let Some(source_neuron) = self.neurons.get_mut(&source_id) {
-      source_neuron.output_axions.push(id);
+      source_neuron.output_axons.push(id);
     }
     if let Some(sink_neuron) = self.neurons.get_mut(&sink_id) {
-      sink_neuron.input_axions.push(id);
+      sink_neuron.input_axons.push(id);
     }
 
     id
   }
   fn add_input(&mut self, sink_id:u32) -> u128 {
-    self.num_of_axions +=1;
-    let id = self.axions.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    let input = Axion::new(0,sink_id, id, true);
-    self.axions.insert(id, input);
+    self.num_of_axons +=1;
+    let id = self.axons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
+    let input = Axon::new(0,sink_id, id, true);
+    self.axons.insert(id, input);
 
     // Update neuron connections
     if let Some(sink_neuron) = self.neurons.get_mut(&sink_id) {
-      sink_neuron.input_axions.push(id);
+      sink_neuron.input_axons.push(id);
     } else {dbg!(sink_id);}
     // Put it in the brain
     self.input_ids.insert(id);
@@ -415,31 +415,31 @@ impl Spirion {
       if let Some(neuron) = self.neurons.remove(&neuron_id) {
           // Remove all input axons
           self.num_of_neurons = self.num_of_neurons.saturating_sub(1);
-          for axion_id in neuron.input_axions {
-              self.remove_axion(axion_id);
+          for axon_id in neuron.input_axons {
+              self.remove_axon(axon_id);
           }
           // Remove all output axons
-          for axion_id in neuron.output_axions {
-              self.remove_axion(axion_id);
+          for axon_id in neuron.output_axons {
+              self.remove_axon(axon_id);
           }
       }
   }
-  fn remove_axion(&mut self, axion_id: u128) {
-    if let Some(axion) = self.axions.remove(&axion_id) {
+  fn remove_axon(&mut self, axon_id: u128) {
+    if let Some(axon) = self.axons.remove(&axon_id) {
       // Remove axon from source neuron's output list
-      self.num_of_axions = self.num_of_axions.saturating_sub(1);
-      if let Some(source_neuron) = self.neurons.get_mut(&axion.id_source) {
-        source_neuron.output_axions.retain(|&id| id != axion_id);
+      self.num_of_axons = self.num_of_axons.saturating_sub(1);
+      if let Some(source_neuron) = self.neurons.get_mut(&axon.id_source) {
+        source_neuron.output_axons.retain(|&id| id != axon_id);
       }
       // Remove axon from sink neuron's input list
-      if let Some(sink_neuron) = self.neurons.get_mut(&axion.id_sink) {
-        sink_neuron.input_axions.retain(|&id| id != axion_id);
+      if let Some(sink_neuron) = self.neurons.get_mut(&axon.id_sink) {
+        sink_neuron.input_axons.retain(|&id| id != axon_id);
       }
     }
   }
 
-  // fn input_is_valid(&self, input:&Axion) -> bool {
-  //   if self.axions.contains_key(&input.id) {
+  // fn input_is_valid(&self, input:&Axon) -> bool {
+  //   if self.axons.contains_key(&input.id) {
   //     return true
   //   }
   //   if self.neurons.contains_key(&input.id_sink) {

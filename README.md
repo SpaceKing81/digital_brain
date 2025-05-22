@@ -1,5 +1,5 @@
 # Brain
-A fun little project of making a digital brain
+A fun little project of making a digital brain (Named Spirion)
 
 Originally was just gonna be a small little project, an idea I had while working on my Ants project and a nice distraction.
 
@@ -7,8 +7,30 @@ Ended up spending an obsene amount of time on it testing and iterating. Some tea
 
 Only now got around to actually making it a repository, because it was feeling more and more like an actual project rather then a side quest. But yeah, we are here now, so progress can be adequetly tracked.
 
-Goals:
-- Thinking brain that runs decently stablly
-- Useable hookup to various inputs (ie camera vs microphone or swap to a pressure sensor) and outputs (ie motor, actuator, button, video game, numatic pump)
-- Efficent and able to run massive amounts of neurons realitivly cheaply (stuck at 200 rn with an update of roughly 60 fps)
-- Generally clean up and finish the whole thing, its really inefficient right now, and I don't even have the outputs done yet
+And now, much later, can confidently say that work here has vastly prepared me for my Ants project as well, so thats wonderful!
+
+How to use:
+(Techinically its a library, so eventually I'll get this into crates.io when its not abhorent.)
+
+Download the nessisary files, import {use digital_brain::Spirion;}
+Make use of the various tools avaible. Right now there are not a lot.
+Can run example files as well, currently there are 2 (Technically)
+
+Run in terminal:
+  - cargo run --example just_chatting
+  - cargo run --example pong
+  - cargo run --example normal_pong (play yourself)
+
+
+Checkpoints Complete:
+- Checkpoint 1
+
+Goals before next checkpoint (2):
+- Finish implementation of Pain/Pleasure signaling
+- Refine current connection alterations, add building connections as well as breaking unwanted connections
+- Streamline input-data convertions (ie camera vs microphone or swap to a pressure sensor) and data - outputs convertions (ie motor, actuator, button, video game, pnumatic pump)
+- Optimize current tick function to run faster more efficently
+- Current rendering iteration is cool, but super cluncky. Switch it so that it only renders active neurons prob, I have this cool idea about fading the further connections into blackness or smth.
+- Still need to figure out the frezzing issue when it goes over 29 ticks per render. Current leads are whatever pathway the output neurons and neurons connected to inputs go down and the differences between those and normal neurons, as those are the only ones continuing to move after a bit. 
+
+Next Checkpoint: Save options. Spinning up a new brain brings with it complete randomness and is dumber then the dumbest animal. Jellyfish? The ability to save the current state of the neurons (maybe a .csv file?) and then spin up a brain using saved data (again, csv probably, or some more compact data storage file). This allows continuity, and so that everytime its shut down, it can be paused and played rather then killed and reborn.

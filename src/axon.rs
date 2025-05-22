@@ -1,10 +1,10 @@
 // use crate::neuron::Neuron;
 use macroquad::{rand, color::{Color,GRAY}};
 
-use crate::internal_consts::{AXION_INPUT_COLOR, AXION_POS_COLOR, AXION_NEG_COLOR};
+use crate::internal_consts::{AXON_INPUT_COLOR, AXON_POS_COLOR, AXON_NEG_COLOR};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Axion {
+pub struct Axon {
   pub id:u128, // personal id
   pub id_source:u32, // id of the signal activator
   pub id_sink:u32, // id of the signal recipient
@@ -18,9 +18,9 @@ pub struct Axion {
   avg_t: u32,
 }
 // General
-impl Axion {
+impl Axon {
   pub fn new(id_source:u32, id_sink:u32, id:u128, is_input:bool) -> Self {
-    Axion {
+    Axon {
       id, // personal id
       id_source, // id of the signal activator
       id_sink, // id of the signal recipient
@@ -41,7 +41,7 @@ impl Axion {
   
   // takes its self and outputs where its going, and the stength of firing
   // delta_t here is the time since last firing of the neuron
-  pub fn fire_axion(&mut self, delta_t:u32) -> (u32,i32) {
+  pub fn fire_axon(&mut self, delta_t:u32) -> (u32,i32) {
     // Order important, don't mix them up
     if self.is_input {
       return (self.id_sink, self.strength);
@@ -52,15 +52,15 @@ impl Axion {
   }
   pub fn get_to_draw(&self) -> (u32, u32, Color) {
     if self.is_input {
-      return (0, self.id_sink, AXION_INPUT_COLOR);
+      return (0, self.id_sink, AXON_INPUT_COLOR);
     }
     
     let (source, sink) = (
       self.id_source, self.id_sink
     );
     let color = match self.strength {
-      s if s > 0 => AXION_POS_COLOR, // Green for excitatory
-      s if s < 0 => AXION_NEG_COLOR, // Red for inhibitory
+      s if s > 0 => AXON_POS_COLOR, // Green for excitatory
+      s if s < 0 => AXON_NEG_COLOR, // Red for inhibitory
       _ => GRAY, // Gray for TB Killed
     };
     (source, sink, color)
@@ -83,14 +83,14 @@ impl Axion {
     }
     // sets the average
     self.avg_t = (self.avg_t + self.avg_t + self.delta_t) / 3;
-    // Don't need to set delta_t to 0, irrelevent as axions 
+    // Don't need to set delta_t to 0, irrelevent as axons 
     // dont get updated unless being fired
   }
 }
 
 // Mutate
-impl Axion {
-  /// Changes the strength based on how happy and reliable the axion is
+impl Axon {
+  /// Changes the strength based on how happy and reliable the axon is
   fn mutate_strength(&mut self) {
 
     let happyness = self.happyness as i32;

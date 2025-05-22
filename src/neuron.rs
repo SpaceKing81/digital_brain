@@ -25,8 +25,8 @@ pub struct Neuron {
   pub inputs:Vec<i32>, // total inputs for this tick, post weight
   input_memory:Vec<i32>, // Memory of previous values, currently 5
 
-  pub output_axions: Vec<u128>, 
-  pub input_axions: Vec<u128>,
+  pub output_axons: Vec<u128>, 
+  pub input_axons: Vec<u128>,
 
   tick_last_fired:u128, // the time it fired last
   pub delta_t:u32, // how long since last fire
@@ -50,8 +50,8 @@ impl Neuron {
         input_memory:vec![0,0,0,0,0],
         inputs:Vec::new(),
 
-        output_axions: Vec::new(),
-        input_axions: Vec::new(),
+        output_axons: Vec::new(),
+        input_axons: Vec::new(),
         
         tick_last_fired:0,
         delta_t:0,
@@ -145,7 +145,7 @@ impl Neuron {
   }
 
   pub fn has_input(&self, input_ids: &HashSet<u128>) -> bool {
-    for &i in &self.input_axions {
+    for &i in &self.input_axons {
       if input_ids.contains(&i) {return true}
     }
     false

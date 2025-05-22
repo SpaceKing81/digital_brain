@@ -82,7 +82,7 @@ pub mod update_threads {
     use macroquad::math::Vec2;
     use rayon::prelude::*;
     use crate::neuron::Neuron;
-    use crate::axion::Axion;
+    use crate::axon::Axon;
     use crate::grid::grid::GridCell;
     use crate::internal_consts::*;
 
@@ -93,7 +93,7 @@ pub mod update_threads {
     pub new_position: Vec2,
     }
     #[derive(Debug)]
-    pub struct AxionUpdate {
+    pub struct AxonUpdate {
     pub id: u128,
     pub new_happyness: u32,
     }
@@ -102,12 +102,12 @@ pub mod update_threads {
 
     pub fn parallel_neuron_step<F, G>(
         neurons: &HashMap<u32, Neuron>,
-        axions: &HashMap<u128, Axion>,
+        axons: &HashMap<u128, Axon>,
         grid: &HashMap<(i32, i32), GridCell>,
         center: Vec2,
         center_force_fn: F,
         spring_force_fn: G,
-    ) -> (Vec<NeuronUpdate>, Vec<AxionUpdate>)
+    ) -> (Vec<NeuronUpdate>, Vec<AxonUpdate>)
     where
         F: Fn(u32, Vec2) -> Option<Vec2> + Sync + Send,
         G: Fn(u32, u32) -> Option<Vec2> + Sync + Send,
@@ -115,9 +115,9 @@ pub mod update_threads {
 
             
             let neurons_snapshot: Vec<(u32, Neuron)> = neurons.iter().map(|(&id, n)| (id, n.clone())).collect();
-            let axions_snapshot = axions;
-            // 1) Parallel-map each neuron → (its NeuronUpdate, Vec<AxionUpdate>)
-            let all_updates: Vec<(NeuronUpdate, Vec<AxionUpdate>)> =
+            let axons_snapshot = axons;
+            // 1) Parallel-map each neuron → (its NeuronUpdate, Vec<AxonUpdate>)
+            let all_updates: Vec<(NeuronUpdate, Vec<AxonUpdate>)> =
                 neurons_snapshot
                 .into_par_iter()
                 .map(|(id, neuron)| {
@@ -136,19 +136,19 @@ pub mod update_threads {
                     .unwrap_or_default();
                     total_force += repulse_force;
 
-                    // collect axion updates locally
-                    let mut local_axions = Vec::new();
-                    for ax_id in &neuron.input_axions {
-                        if let Some(ax) = axions_snapshot.get(ax_id) {
+                    // collect axon updates locally
+                    let mut local_axons = Vec::new();
+                    for ax_id in &neuron.input_axons {
+                        if let Some(ax) = axons_snapshot.get(ax_id) {
                             total_force -= spring_force_fn(id, ax.id_source).unwrap_or_default();
-                            local_axions.push(AxionUpdate {
+                            local_axons.push(AxonUpdate {
                                 id: *ax_id,
                                 new_happyness: neuron.happyness,
                             });
                         }
                     }
-                    for ax_id in &neuron.output_axions {
-                        if let Some(ax) = axions_snapshot.get(ax_id) {
+                    for ax_id in &neuron.output_axons {
+                        if let Some(ax) = axons_snapshot.get(ax_id) {
                             total_force -= spring_force_fn(id, ax.id_sink).unwrap_or_default();
                         }
                     }
@@ -156,18 +156,18 @@ pub mod update_threads {
                         id,
                         new_position: neuron.position + total_force,
                     };
-                    (neuron_update, local_axions)
+                    (neuron_update, local_axons)
                 })
                 .collect();
 
         // 2) split into two Vecs
-        let (neuron_updates, axion_lists): (Vec<NeuronUpdate>, Vec<Vec<AxionUpdate>>) =
+        let (neuron_updates, axon_lists): (Vec<NeuronUpdate>, Vec<Vec<AxonUpdate>>) =
         all_updates.into_iter().unzip();
 
-        // 3) flatten the Vec<Vec<AxionUpdate>> into Vec<AxionUpdate>
-        let axion_updates: Vec<AxionUpdate> =
-            axion_lists.into_iter().flatten().collect();
+        // 3) flatten the Vec<Vec<AxonUpdate>> into Vec<AxonUpdate>
+        let axon_updates: Vec<AxonUpdate> =
+            axon_lists.into_iter().flatten().collect();
 
-        (neuron_updates, axion_updates)
+        (neuron_updates, axon_updates)
     }
 }

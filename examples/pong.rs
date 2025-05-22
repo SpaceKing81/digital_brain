@@ -3,10 +3,13 @@
 
 
 
-
 /*
+
 README: This pong is played by Spirion. No user input, but you can chose the size of the game,
-along with the size of the brain (number of neurons initialized with).
+along with the size of the brain (number of neurons initialized with). 
+
+Score is displayed, it goes up every time it's succsefully deflected and down anytime it
+bounces past
 
 TO RUN - Paste into terminal the following line:
 cargo run --example pong
@@ -60,22 +63,22 @@ async fn main() {
 
     let outcome = game.progress_frame(direction);
     match outcome {
-      Reward::Pain => {brain.pain(None);},
-      Reward::Plesure => {brain.reward(None);},
+      Reward::Pain => {brain.pain(Some(5));},
+      Reward::Plesure => {brain.reward(Some(5));},
       Reward::Null => {},
     }
     // Draw Game
     game.draw();
     brain.brain_input(game.frame_to_inputs());
 
-    // Draw FPS and other info
-    // draw_text(
-    //   &format!("Hello world"),
-    //   20.,
-    //   20.,
-    //   20.,
-    //   WHITE,
-    // );
+    // Draw score
+    draw_text(
+      &format!("{}", game.score),
+      game.pixle_size * game.current_frame.rows as f32,
+      20.,
+      20.,
+      WHITE,
+    );
     }
     // Render the frame
     next_frame().await;
@@ -127,7 +130,7 @@ struct PongGame {
   output_list:Vec<u32>,
   ball:Ball,
   paddle_col:usize,
-  score:usize,
+  score:i32,
   pixle_size:f32,
 }
 #[derive(Clone, Copy, Debug)]
@@ -205,7 +208,8 @@ impl PongGame {
     
     if self.ball_hit_paddle(row, col) {
       self.ball.bounce_left_right(); 
-      score = Reward::Plesure
+      score = Reward::Plesure;
+      self.score +=1;
     }
     if (col + 1) == self.current_frame.cols || col == 0 {
       self.ball.bounce_top_bottom();
@@ -213,7 +217,7 @@ impl PongGame {
     if (row + 1) == self.current_frame.rows || row == 0 {
       self.ball.bounce_left_right();
     }
-    if row == 0 { self.score +=1; score = Reward::Pain; }
+    if row == 0 { self.score -=1; score = Reward::Pain; }
     
     self.ball.forward();
     let (row,col) = self.get_ball_pos();
@@ -393,7 +397,7 @@ impl PongGame {
   }
 }
 fn pixle_size_calculator(game_size:usize) -> f32 {
-  if game_size == 0 {panic!("Chosen game size is too large");}
+  if game_size == 0 {panic!("Chosen game size is too small");}
   let smallest = std::cmp::min(screen_height().round() as i32, screen_width().round() as i32);
   if smallest > std::cmp::min(smallest, game_size as i32) {
     return (smallest as f32/game_size as f32) as f32

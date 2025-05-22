@@ -1,6 +1,6 @@
 mod brain;
 mod internal_consts;
-mod axion;
+mod axon;
 mod grid;
 mod neuron;
 mod consts;
