@@ -137,6 +137,7 @@ impl Neuron {
   } 
   /// Checks if the neuron should be killed
   pub fn check_to_kill(&self, has_input: bool) -> bool {
+    // return false;
     if has_input {return false}
     if self.is_output {return false}
     if self.happyness >= MAX_HAPPY_VALUE {return true}

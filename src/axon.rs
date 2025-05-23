@@ -15,7 +15,7 @@ pub struct Axon {
   happyness:u32, // how happy the input neuron (sink) is, 0-150, low is good
 
   pub delta_t: u32,
-  avg_t: u32,
+  pub avg_t: u32, // average rate of firing
 }
 // General
 impl Axon {
@@ -49,6 +49,9 @@ impl Axon {
     self.mutate_strength();
     self.math(delta_t);
     (self.id_sink, self.strength)
+  }
+  pub fn fire_input(&mut self, delta_t:u32) {
+    self.math(delta_t);
   }
   pub fn get_to_draw(&self) -> (u32, u32, Color) {
     if self.is_input {

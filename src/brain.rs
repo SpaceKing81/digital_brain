@@ -7,7 +7,7 @@ use macroquad::{
 
 use crate::{
   //
-  axon::Axon, neuron::Neuron, internal_consts::*, grid::{grid::*, update_threads::*}
+  axon::Axon, neuron::Neuron, internal_consts::*, consts::*, grid::{grid::*, update_threads::*}
   //
 };
 
@@ -107,7 +107,9 @@ impl Spirion {
   /// No input, however all the output id's are collected and output at the end
   pub fn tick(&mut self, num_iterations:Option<u32>) -> Option<Vec<u32>> {
     let mut output = Vec::new();
-    for _ in 0..num_iterations.unwrap_or(1) {
+
+    // Cannot render more at once with no input then a single standard_deviation without a cascading upshooting of happyness values!!???
+    for _ in 0..(std::cmp::min(num_iterations.unwrap_or(1),(ONE_STANDARD_DEV_THRESHOLD - 1 ).abs() as u32)) {
       // one tick passes
       self.clock += 1;
       
@@ -125,7 +127,7 @@ impl Spirion {
           let happyness = neuron.happyness;
           for axon_id in input_axons {
             // Checks to see if there are any inputs to this neuron
-            if self.input_ids.contains(&axon_id) {has_input = true}
+            if self.input_ids.contains(&axon_id) {has_input = true;}
 
             if let Some(axon) = self.axons.get_mut(&axon_id) {
               axon.update_happyness(happyness);
@@ -175,9 +177,10 @@ impl Spirion {
       if !self.input_ids.contains(&input_id) {panic!("Invalid Input id passed in");}
   
       // Collect the neuron id
-      if let Some(input) = self.axons.get(&input_id) {
+      if let Some(input) = self.axons.get_mut(&input_id) {
         let sink = input.id_sink;
         if let Some(neuron) = self.neurons.get_mut(&sink) {
+          input.fire_axon(neuron.delta_t);
           neuron.inputs.push(strength);
 
           // Add to active neuron
@@ -190,8 +193,51 @@ impl Spirion {
     }
   }
 
-  pub fn reward(&mut self, intensity:Option<u32>) {return}
-  pub fn pain(&mut self, intensity:Option<u32>) {return}
+  /// Rewards Spirion with a level of intensity, ranging from 0 (None) to 10 (Full pleasure)
+  /// Makes it feel good, hopefully making the brain happy
+  pub fn reward(&mut self, intensity:Option<u32>) {
+    if intensity == None {return;}
+    // collect a vec with all the tick frequencies
+    // collect a vec with all the input ids
+    let mut frequencies: Vec<u32> = Vec::new();
+    let mut id: Vec<u128> = Vec::new();
+    for i in &self.input_ids {
+      if let Some(axon) = self.axons.get(i) {
+        id.push(*i);
+        frequencies.push(axon.avg_t);
+      }
+    }
+    // loop a number of times based on intensity (maybe 5 * intensity?)
+    for tick in 0..(intensity.unwrap() * ITERATION_MULTIPLIER) {
+      let mut inputs:Vec<(u128,i32)> = Vec::new();
+      for i in 0..frequencies.len() {
+        if tick % frequencies[i] == 0 && frequencies[i] < tick {
+          inputs.push((id[i], MAX_THRESHOLD));
+        }
+      }
+      // tick once
+      self.tick(None);
+    }
+  }
+  /// Causes pain to Spirion by firing with a level of chaos based on the intensity.
+  /// 0 (None) to 10 (Pure hellish agony) 
+  pub fn pain(&mut self, intensity:Option<u32>) {
+    if intensity == None {return;}
+    for _ in 0..(intensity.unwrap() * ITERATION_MULTIPLIER) {
+      let mut inputs:Vec<(u128,i32)> = Vec::new();
+      for &id in &self.input_ids {
+        if rand::gen_range(-2, 1) >= 0 {
+          inputs.push((id, MAX_THRESHOLD));
+        }
+      }
+      // tick once
+      self.tick(None);
+    }
+    //  loop a number of times based on intensity (maybe 5 * intensity?)
+    //  chose random inputs
+    //  fire them with random strengths
+    //  tick once
+  }
 }
 
 /// Mechanics

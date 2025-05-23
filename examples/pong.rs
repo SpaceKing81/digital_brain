@@ -53,7 +53,7 @@ async fn main() {
       break;
     }
     // Brain thinking
-    let outputs = brain.tick(Some(10));
+    let outputs = brain.tick(None);
     let direction = game.output_to_moves(outputs);
     // Drawing a frame
     { 
@@ -254,7 +254,7 @@ impl PongGame {
       Move::Down => {
         if let Some(_) = self.current_frame.get(
           0,
-          self.paddle_col + direction.1 + 1,
+          self.paddle_col + direction.1 + 2,
         ) {
           // If this is a valid place on the map, then:
           self.current_frame.set(
@@ -281,7 +281,7 @@ impl PongGame {
             self.current_frame.cols - 2, 
             true
           ).unwrap_or_default();
-          self.paddle_col = self.current_frame.cols - 1;                                   
+          self.paddle_col = self.current_frame.cols - 2;                                   
         }
       },
       Move::Up => {

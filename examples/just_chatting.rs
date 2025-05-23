@@ -19,7 +19,7 @@ cargo run --example just_chatting
 
 */
 
-const STARTING_NEURONS:Option<u32> = None;
+const STARTING_NEURONS:Option<u32> = Some(100);
 
 
 
@@ -134,7 +134,7 @@ async fn main() {
 
         let raw_output = output_to_keys(
             &outputs,
-            brain.tick(Some(10))
+            brain.tick(Some(60))
         );
         let refined_output = convert_to_strings(raw_output);
         let mut bridge = String::new();

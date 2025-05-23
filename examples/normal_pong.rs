@@ -248,7 +248,7 @@ impl PongGame {
             self.current_frame.cols - 2, 
             true
           ).unwrap_or_default();
-          self.paddle_col = self.current_frame.cols - 1;                                   
+          self.paddle_col = self.current_frame.cols - 2;                                   
         }
       },
       Move::Up => {
