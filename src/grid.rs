@@ -1,3 +1,5 @@
+// GOAL: Complete deletion of this file
+
 pub mod grid {
     use std::collections::HashMap;
     use macroquad::math::Vec2;
