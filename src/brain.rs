@@ -25,24 +25,8 @@ pub struct Spirion {
 
   active_neurons:HashSet<u32>,
 }
-
+// Public
 impl Spirion {
-  fn new() -> Self {
-    Spirion {
-      clock:0,
-
-      neurons: HashMap::new(),
-      axons: HashMap::new(),
-      output_ids: HashSet::new(),
-      input_ids: HashSet::new(),
-
-      num_of_neurons:0,
-      num_of_axons:0,
-
-
-      active_neurons:HashSet::new(),
-    }
-  }
   /// New brain with specifed inputs and outputs, optional number of Neurons.
   /// Default is 500 Neurons
   pub fn spin_up_new(num_neurons: Option<u32>, num_input: u128, num_output: u32) -> (Self, Vec<u128>, Vec<u32>) {
@@ -104,7 +88,7 @@ impl Spirion {
   }
   
   /// Ticks over the brain simulation for however many specified ticks, with a default of 1 iteration.
-  /// No input, however all the output id's are collected and output at the end
+  /// No input, however all the output id's are spat out as an Option<Vec>
   pub fn tick(&mut self, num_iterations:Option<u32>) -> Option<Vec<u32>> {
     let mut output = Vec::new();
 
@@ -168,6 +152,7 @@ impl Spirion {
   Some(output)
   }
   
+  /// Allows the addition of sensory input to the brain, takes a vec of (id, strength) pairs
   pub fn brain_input(&mut self, inputs:Option<Vec<(u128, i32)>>) {
     // Check if theres something in it
     if inputs.is_none() {return}
@@ -193,10 +178,11 @@ impl Spirion {
     }
   }
 
-  /// Rewards Spirion with a level of intensity, ranging from 0 (None) to 10 (Full pleasure)
+  /// Rewards Spirion with a level of intensity, ranging from 0 (None) to 10 (Endless Bliss)
   /// Makes it feel good, hopefully making the brain happy
   pub fn reward(&mut self, intensity:Option<u32>) {
     if intensity == None {return;}
+    let intensity = std::cmp::min(intensity.unwrap(), 10);
     // collect a vec with all the tick frequencies
     // collect a vec with all the input ids
     let mut frequencies: Vec<u32> = Vec::new();
@@ -208,7 +194,7 @@ impl Spirion {
       }
     }
     // loop a number of times based on intensity (maybe 5 * intensity?)
-    for tick in 0..(intensity.unwrap() * ITERATION_MULTIPLIER) {
+    for tick in 0..(intensity * ITERATION_MULTIPLIER) {
       let mut inputs:Vec<(u128,i32)> = Vec::new();
       for i in 0..frequencies.len() {
         if tick % frequencies[i] == 0 && frequencies[i] < tick {
@@ -223,7 +209,9 @@ impl Spirion {
   /// 0 (None) to 10 (Pure hellish agony) 
   pub fn pain(&mut self, intensity:Option<u32>) {
     if intensity == None {return;}
-    for _ in 0..(intensity.unwrap() * ITERATION_MULTIPLIER) {
+    let intensity = std::cmp::min(intensity.unwrap(), 10);
+
+    for _ in 0..(intensity * ITERATION_MULTIPLIER) {
       let mut inputs:Vec<(u128,i32)> = Vec::new();
       for &id in &self.input_ids {
         if rand::gen_range(-2, 1) >= 0 {
@@ -242,6 +230,22 @@ impl Spirion {
 
 /// Mechanics
 impl Spirion {
+  fn new() -> Self {
+    Spirion {
+      clock:0,
+
+      neurons: HashMap::new(),
+      axons: HashMap::new(),
+      output_ids: HashSet::new(),
+      input_ids: HashSet::new(),
+
+      num_of_neurons:0,
+      num_of_axons:0,
+
+
+      active_neurons:HashSet::new(),
+    }
+  }
   fn spring_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
     if id1 != id2 {return None}
     let pos1 = self.neurons[&id1].position;
@@ -282,6 +286,7 @@ impl Spirion {
 
 /// Graphics
 impl Spirion {
+  // TBFixed
   pub fn render(&mut self, center: Vec2) {
     let mut neurons_to_remove: Vec<u32> = Vec::new();
     let mut axons_to_remove: Vec<u128> = Vec::new();
