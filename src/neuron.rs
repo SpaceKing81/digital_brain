@@ -58,6 +58,26 @@ impl Neuron {
         avg_t:0,
     }
   }
+  pub fn new_with_inout(input_axons: Vec<u128>, output_axons: Vec<u128>) -> Self {
+    Neuron {
+        // id,
+        position:Vec2::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
+        happyness:25,
+        base_threshold:50,
+        threshold:50,
+        is_output: false,
+        
+        input_memory:vec![0,0,0,0,0],
+        inputs:Vec::new(),
+
+        input_axons,
+        output_axons,
+        
+        tick_last_fired:0,
+        delta_t:0,
+        avg_t:0,
+    }
+  }
   /// Rolls a save check to see if it should die or gets another chance at life, and if so how many.
   /// Only relies on happyness value, but only really used if it doesnt have any outputs or inputs left.
   pub fn roll_save_check(&self, output:bool) -> Option<i32> {
@@ -80,7 +100,8 @@ impl Neuron {
   
   /// Housekeeping stuff, memory management, time updating, basic universal update.
   /// Updates everything that needs to be refreshed whenever it becomes an active neuron.
-  pub fn update(&mut self, time:u128) {
+  /// Returns how may (inputs to add, outputs to add)
+  pub fn update(&mut self, time:u128) -> (i16,i16) {
     // Clock update, updates action as needed
     let old_time = self.delta_t;
     self.tick(time);
@@ -96,8 +117,16 @@ impl Neuron {
       // Updates memory as accurate to the times
       self.forget(Some((self.delta_t-old_time)as usize));
     }
+
+
+
+    todo!();
   }
-  
+  pub fn want_to_reproduce(&self) -> bool {
+    // needs to be happy enough to want to reproduce
+    self.happyness < (MAX_HAPPY_VALUE/4)
+  }
+
   fn tick(&mut self, time:u128) {
     self.delta_t = (time - self.tick_last_fired) as u32;
   } 
@@ -137,11 +166,10 @@ impl Neuron {
   } 
   /// Checks if the neuron should be killed
   pub fn check_to_kill(&self, has_input: bool) -> bool {
-    // return false;
     if has_input {return false}
     if self.is_output {return false}
     if self.happyness >= MAX_HAPPY_VALUE {return true}
-    // if self.delta_t > INACTIVITY_DEATH_TIME {return true}
+    if self.delta_t >= INACTIVITY_DEATH_TIME {return true}
     false
   }
 

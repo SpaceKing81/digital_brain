@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 // use rayon::prelude::*;
 use macroquad::{
   // color::*, 
-  math::Vec2, rand, shapes::*, window::{screen_width,screen_height},
+  math::Vec2, rand::{self, gen_range}, shapes::*, window::{screen_height, screen_width},
 };
 
 use crate::{
@@ -103,6 +103,13 @@ impl Spirion {
       let mut axons_to_remove = Vec::new();
       let mut neurons_to_remove= Vec::new();
 
+      // same but the first is the sink neuron, and the second is the source neurons
+      let mut axons_to_add_sink: Vec<(u32, Vec<u32>)> = Vec::new();
+      // Contains a connection pair, with the source neuron id followed by a vec of sink neurons
+      let mut axons_to_add_source: Vec<(u32, Vec<u32>)> = Vec::new();
+
+      let mut neurons_to_add:Vec<(Vec<u128>,Vec<u128>)> = Vec::new();
+
       for neuron_id in active_neurons_to_iter {
         let mut has_input = false;
         if let Some(neuron) = self.neurons.get_mut(&neuron_id) {
@@ -118,9 +125,46 @@ impl Spirion {
             }
           }
           // update the neurons
-          neuron.update(self.clock);
+          let (num_in, num_out) = neuron.update(self.clock);
+
+          // Find the requisate number of input-output additions
+          if num_in.is_negative() {
+            for _ in 0..num_in.abs() {
+              let index = gen_range(0, neuron.input_axons.len());
+              let id = neuron.input_axons[index];
+              axons_to_remove.push(id);
+            }
+          } else {
+            let mut sources = Vec::new();
+            for _ in 0..num_in {
+              let source = gen_range(1, self.num_of_neurons);
+              sources.push(source);
+            }
+            axons_to_add_sink.push((neuron_id,sources));
+          }
+          if num_out.is_negative() {
+            for _ in 0..num_out.abs() {
+              let index = gen_range(0, neuron.output_axons.len());
+              let id = neuron.output_axons[index];
+              axons_to_remove.push(id);
+            }
+          } else {
+            let mut sinks = Vec::new();
+            for _ in 0..num_out {
+              let sink = gen_range(1, self.num_of_neurons);
+              sinks.push(sink);
+            }
+            axons_to_add_source.push((neuron_id,sinks));
+          }
+
           // Check if it should die
           if neuron.check_to_kill(has_input) {neurons_to_remove.push(neuron_id)}
+
+          // Check if it wants to spawn a new neuron 
+          if neuron.want_to_reproduce() {
+            neurons_to_add.push((neuron.input_axons.clone(),neuron.output_axons.clone()));
+          }
+
           // check if it should fire
           if neuron.ready_to_fire() {
             let delta_t = neuron.fired();
@@ -142,9 +186,18 @@ impl Spirion {
                 } else {axons_to_remove.push(axon_id);}
               }}}}}
 
-      // remove all inactive neurons
+      // Remove stuff
       for axon_id in axons_to_remove {self.remove_axon(axon_id);}
       for neuron_id in neurons_to_remove {self.no_more_outputs(neuron_id);}
+
+      // TODO: add sink axons
+      // TODO: add source axons
+    
+      for (inp,out) in neurons_to_add {
+        self.add_neuron_inout(inp, out);
+      }
+      
+
   }
   if output.is_empty() {
     return None;
@@ -421,6 +474,12 @@ impl Spirion {
     self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
     self.neurons.insert(id, Neuron::new(false));
+    id
+  }
+  fn add_neuron_inout(&mut self, inp:Vec<u128>, out:Vec<u128>) -> u32 {
+    self.num_of_neurons +=1;
+    let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
+    self.neurons.insert(id, Neuron::new_with_inout(inp,out));
     id
   }
   fn add_output(&mut self) -> u32 {

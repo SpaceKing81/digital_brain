@@ -1,7 +1,7 @@
 // use crate::neuron::Neuron;
 use macroquad::{rand, color::{Color,GRAY}};
 
-use crate::internal_consts::{AXON_INPUT_COLOR, AXON_POS_COLOR, AXON_NEG_COLOR};
+use crate::{internal_consts::{AXON_INPUT_COLOR, AXON_NEG_COLOR, AXON_POS_COLOR}, MAX_HAPPY_VALUE};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Axon {
@@ -101,15 +101,15 @@ impl Axon {
 
     // the lower the happyness, the less likely to change signs
     let sign = {
-      let m = rand::gen_range(-happyness, 150);
+      let m = rand::gen_range(-happyness, MAX_HAPPY_VALUE as i32);
       if m == 0 { 1 } else {m/m.abs()}
     };
 
-    // higher reliability makes it more likely to be positive and increase
+    // higher reliability makes it more likely to be go farther from 0
     let p = rand::gen_range(-25, reliability);
     let r = rand::gen_range(0, 20) * if p == 0 { 1 } else {p/p.abs()};
 
-    self.strength += r;
+    self.strength = if self.strength.is_positive() {self.strength + r} else {self.strength - r};
     self.strength *= sign;
   }
 }
