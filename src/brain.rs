@@ -382,7 +382,7 @@ impl Spirion {
 impl Spirion {
   fn no_more_outputs(&mut self, neuron_id: u32) {
     if let Some(neuron) = self.neurons.get(&neuron_id) {
-      if neuron.is_output {return;}
+      if neuron.is_output {panic!("outputs never have output axions")}
       if let Some(roll) = neuron.roll_save_check(false) {
           // Create new connections
           for _ in 0..roll {
@@ -473,7 +473,7 @@ impl Spirion {
           for axon_id in neuron.output_axons {
               self.remove_axon(axon_id);
           }
-      }
+      } else {panic!("trying to remove a non-existent neuron???")}
   }
   fn remove_axon(&mut self, axon_id: u128) {
     if let Some(axon) = self.axons.remove(&axon_id) {
@@ -489,15 +489,6 @@ impl Spirion {
     }
   }
 
-  // fn input_is_valid(&self, input:&Axon) -> bool {
-  //   if self.axons.contains_key(&input.id) {
-  //     return true
-  //   }
-  //   if self.neurons.contains_key(&input.id_sink) {
-  //     return true;
-  //   }
-  //   false
-  // }
 }
 
 

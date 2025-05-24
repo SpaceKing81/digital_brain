@@ -112,7 +112,7 @@ struct PongGame {
   current_frame:Matrix<bool>,
   ball:Ball,
   paddle_col:usize,
-  score:usize,
+  score:i32,
   pixle_size:f32,
 }
 struct Ball {
@@ -187,6 +187,9 @@ impl PongGame {
     }
     if (row + 1) == self.current_frame.rows || row == 0 {
       self.ball.bounce_left_right();
+    }
+    if row == 0 {
+      self.score -=1;
     }
     
     self.ball.forward();
