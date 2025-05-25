@@ -15,7 +15,7 @@ use crate::consts::*;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Neuron {
   // id:u32, // name, basiclly
-  pub position: Vec2, // Position on the screen
+  pub pos: Vec2, // Pos on the screen
   base_threshold:i32,
   threshold:i32, // threshold to fire
   pub happyness:u32, // how happy it is with the firing frequency, 0 is happiest
@@ -41,7 +41,7 @@ impl Neuron {
   pub fn new(is_output:bool) -> Self {
     Neuron {
         // id,
-        position:Vec2::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
+        pos:Vec2::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
         happyness:25,
         base_threshold:50,
         threshold:50,
@@ -58,24 +58,42 @@ impl Neuron {
         avg_t:0,
     }
   }
-  pub fn new_with_inout(input_axons: Vec<u128>, output_axons: Vec<u128>) -> Self {
+  pub fn new_with_data(
+    pos:Option<Vec2>, 
+    happyness:Option<u32>,
+    base_threshold:Option<i32>,
+    threshold:Option<i32>,
+    is_output:Option<bool>,
+    
+    input_memory:Option<Vec<i32>>,
+    inputs:Option<Vec<i32>>,
+
+    input_axons:Option<Vec<u128>>,
+    output_axons:Option<Vec<u128>>,
+    
+    tick_last_fired:Option<u128>,
+    delta_t:Option<u32>,
+    avg_t:Option<u32>,
+  ) -> Self {
+    let pos = pos.unwrap_or(Vec2::new(rand::gen_range(20.0,screen_width()-20.0), rand::gen_range(10.0,screen_height()-10.0)));
+
     Neuron {
         // id,
-        position:Vec2::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
-        happyness:25,
-        base_threshold:50,
-        threshold:50,
-        is_output: false,
+        pos,
+        happyness:happyness.unwrap_or(25),
+        base_threshold:base_threshold.unwrap_or(50),
+        threshold:threshold.unwrap_or(50),
+        is_output: is_output.unwrap_or(false),
         
-        input_memory:vec![0,0,0,0,0],
-        inputs:Vec::new(),
+        input_memory:input_memory.unwrap_or(vec![0,0,0,0,0]),
+        inputs:input_memory.unwrap_or(Vec::new()),
 
-        input_axons,
-        output_axons,
+        input_axons:input_axons.unwrap_or(Vec::new()),
+        output_axons:output_axons.unwrap_or(Vec::new()),
         
-        tick_last_fired:0,
-        delta_t:0,
-        avg_t:0,
+        tick_last_fired:tick_last_fired.unwrap_or_default(),
+        delta_t:delta_t.unwrap_or_default(),
+        avg_t:avg_t.unwrap_or_default(),
     }
   }
   /// Rolls a save check to see if it should die or gets another chance at life, and if so how many.
@@ -149,10 +167,10 @@ impl Neuron {
 impl Neuron {
   /// Draws the Neuron where ever it is, gives it a color based on its firing status + output
   pub fn draw(&self) {
-    if self.position.is_nan() {print!(" Caught! ")}
-    if self.is_output { draw_circle(self.position.x, self.position.y, 10.0, OUTPUT_COLOR); return;}
+    if self.pos.is_nan() {print!(" Caught! ")}
+    if self.is_output { draw_circle(self.pos.x, self.pos.y, 10.0, OUTPUT_COLOR); return;}
     let color = if self.delta_t == 0 {RED} else if self.delta_t < 5 {YELLOW} else {GRAY};
-    draw_circle(self.position.x, self.position.y, 10.0, color);
+    draw_circle(self.pos.x, self.pos.y, 10.0, color);
   }
 
 }

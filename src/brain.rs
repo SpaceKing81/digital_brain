@@ -91,9 +91,9 @@ impl Spirion {
   /// No input, however all the output id's are spat out as an Option<Vec>
   pub fn tick(&mut self, num_iterations:Option<u32>) -> Option<Vec<u32>> {
     let mut output = Vec::new();
-
+    if num_iterations == Some(0) {panic!("Need a number larger then 0 iterations")}
     // Cannot render more at once with no input then a single standard_deviation without a cascading upshooting of happyness values!!???
-    for _ in 0..(std::cmp::min(num_iterations.unwrap_or(1),(ONE_STANDARD_DEV_THRESHOLD - 1 ).abs() as u32)) {
+    for _ in 0..(std::cmp::min(num_iterations.unwrap_or(1),(ONE_STANDARD_DEV_THRESHOLD - 1).abs() as u32)) {
       // one tick passes
       self.clock += 1;
       
@@ -108,7 +108,7 @@ impl Spirion {
       // Contains a connection pair, with the source neuron id followed by a vec of sink neurons
       let mut axons_to_add_source: Vec<(u32, Vec<u32>)> = Vec::new();
 
-      let mut neurons_to_add:Vec<(Vec<u128>,Vec<u128>)> = Vec::new();
+      let mut neurons_to_add:Vec<(usize,usize)> = Vec::new();
 
       for neuron_id in active_neurons_to_iter {
         let mut has_input = false;
@@ -162,10 +162,10 @@ impl Spirion {
 
           // Check if it wants to spawn a new neuron 
           if neuron.want_to_reproduce() {
-            neurons_to_add.push((neuron.input_axons.clone(),neuron.output_axons.clone()));
+            neurons_to_add.push((neuron.input_axons.len(),neuron.output_axons.len()));
           }
 
-          // check if it should fire
+          // Check if it should fire
           if neuron.ready_to_fire() {
             let delta_t = neuron.fired();
             let output_axons = neuron.output_axons.clone();
@@ -192,10 +192,12 @@ impl Spirion {
 
       // TODO: add sink axons
       // TODO: add source axons
-    
+      
       for (inp,out) in neurons_to_add {
-        self.add_neuron_inout(inp, out);
+        self.spawn_new_neuron(inp, out);
       }
+
+      todo!();
       
 
   }
@@ -281,7 +283,7 @@ impl Spirion {
   }
 }
 
-/// Mechanics
+// Mechanics
 impl Spirion {
   fn new() -> Self {
     Spirion {
@@ -301,8 +303,8 @@ impl Spirion {
   }
   fn spring_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
     if id1 != id2 {return None}
-    let pos1 = self.neurons[&id1].position;
-    let pos2 = self.neurons[&id2].position;
+    let pos1 = self.neurons[&id1].pos;
+    let pos2 = self.neurons[&id2].pos;
     let distance_s = pos1.distance(pos2);
 
     if distance_s > SPRING_NORMAL { 
@@ -313,7 +315,7 @@ impl Spirion {
     None
   }
   fn center_force(&self, id1:u32, center:Vec2) -> Option<Vec2> {
-    let pos1 = self.neurons[&id1].position;
+    let pos1 = self.neurons[&id1].pos;
     let distance_g = pos1.distance(center);
     if distance_g > GRAVITY_SUFRACE { 
       let direction_g = (pos1 - center) / distance_g;
@@ -322,19 +324,6 @@ impl Spirion {
     }
   None
   }
-  // fn electric_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
-  //   if id1 == id2 {return None}
-  //   let pos1 = self.neurons[&id1].position;
-  //   let pos2 = self.neurons[&id2].position;
-  //   // Like-Charge Repulsion
-  //   let distance_e = pos1.distance(pos2);
-  //   if distance_e > ELECTRIC_SUFRACE { // Prevent division by zero
-  //     let direction_e = (pos1 - pos2) / distance_e;
-  //     let electric = COULOMB / (distance_e * distance_e);
-  //     return Some(electric * direction_e * TIME_STEP);
-  //   }
-  //   None
-  // }
 }
 
 /// Graphics
@@ -366,7 +355,7 @@ impl Spirion {
             neurons_to_remove.push(neuron_changes.id);
             continue;
           }
-          neuron.position = neuron_changes.new_position;
+          neuron.pos = neuron_changes.new_position;
           neuron.update(self.clock);
         }
     }
@@ -403,8 +392,8 @@ impl Spirion {
     let mut sinky = 0.0;
 
     if let Some(source_pos) = source {
-      x = source_pos.position.x;
-      y = source_pos.position.y;
+      x = source_pos.pos.x;
+      y = source_pos.pos.y;
     }
 
     if source_id == 0 {
@@ -412,8 +401,8 @@ impl Spirion {
     }
 
     if let Some(sink_pos) = sink {
-      sinkx = sink_pos.position.x;
-      sinky = sink_pos.position.y;
+      sinkx = sink_pos.pos.x;
+      sinky = sink_pos.pos.y;
     }
 
     draw_line (
@@ -450,36 +439,31 @@ impl Spirion {
       }
     }
   }
-  /*
-  fn no_more_inputs(&mut self, neuron_id: u32) {
-    if let Some(neuron) = self.neurons.get(&neuron_id) {
-      let save = if neuron.is_output {neuron.roll_save_check(true)} else {neuron.roll_save_check(false)};
-      if let Some(roll) = save {
-          // Create new connections
-          for _ in 0..roll {
-            let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
-            if sink_id != neuron_id {
-              self.add_axon(neuron_id, sink_id);
-            }
-          }
-        } else {
-          // Commit suicide
-          self.remove_neuron(neuron_id);
-      }
-    }
-  }
-  */
-  // DONT FORGET ABOUT THIS GUY ^^^^
+  
   fn add_neuron(&mut self) -> u32 {
     self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
     self.neurons.insert(id, Neuron::new(false));
     id
   }
-  fn add_neuron_inout(&mut self, inp:Vec<u128>, out:Vec<u128>) -> u32 {
-    self.num_of_neurons +=1;
+  fn spawn_new_neuron(&mut self, inp_num:usize, out_num:usize) -> u32 {
+    let neuron = Neuron::new(false);
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    self.neurons.insert(id, Neuron::new_with_inout(inp,out));
+    self.neurons.insert(id, Neuron::new(false));
+    self.num_of_neurons += 1;
+
+    while inp_num > neuron.input_axons.len() {
+      let source_id = gen_range(1, self.neurons.len() as u32);
+      if let Some(source) = self.neurons.get_mut(&source_id) {
+        self.add_axon(source_id, id);
+      }
+    }
+    while out_num > neuron.output_axons.len() {
+      let sink_id = gen_range(1, self.neurons.len() as u32);
+      if let Some(source) = self.neurons.get_mut(&sink_id) {
+        self.add_axon(sink_id, id);
+      }
+    }
     id
   }
   fn add_output(&mut self) -> u32 {
