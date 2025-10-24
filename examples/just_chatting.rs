@@ -32,7 +32,7 @@ const STARTING_NEURONS:Option<u32> = Some(100);
 
 
 use std::collections::HashMap;
-use macroquad::prelude::*;
+use macroquad::prelude::{coroutines::wait_seconds, *};
 use digital_brain::{Spirion,MAX_THRESHOLD};
 
 fn window_conf() -> Conf {
@@ -104,7 +104,6 @@ async fn main() {
 
     // Initialize the brain
     println!("Starting simulation...");
-    let center = Vec2::new(screen_width()/2.0, screen_height()/2.0);
     let (
         mut brain, 
         inputs, 
@@ -116,9 +115,10 @@ async fn main() {
     );
     let mut thought_text:Vec<String> = Vec::new();
     let mut type_text:Vec<String> = vec![String::new()];
-    
+    let mut count = 0;
     // Main loop
     loop {
+        count += 1;
         // Handle Ending
         if is_key_down(KeyCode::Escape) {
             println!("Terminating Brain...");
@@ -134,7 +134,7 @@ async fn main() {
 
         let raw_output = output_to_keys(
             &outputs,
-            brain.tick(Some(60))
+            brain.tick(Some(1))
         );
         let refined_output = convert_to_strings(raw_output);
         let mut bridge = String::new();
@@ -165,7 +165,7 @@ async fn main() {
         }
 
         // Update and draw neurons and axons
-        brain.render(center);
+        brain.render();
         // Draw Text
         draw_text(
             &format!("{}", get_fps()),
@@ -208,6 +208,7 @@ async fn main() {
         }
 
         }
+        // wait_seconds(1.0);
         // Render the frame
         next_frame().await;
     }
@@ -386,6 +387,7 @@ TODO:
 - forgot this exists, haven't looked at it in forever. Last time looking at this:
     - May 20 2025
     - May 21 2025
+    - Oct 24 2025
 
 
 NOTES:

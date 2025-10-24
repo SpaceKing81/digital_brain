@@ -53,20 +53,8 @@ impl Axon {
   pub fn fire_input(&mut self, delta_t:u32) {
     self.math(delta_t);
   }
-  pub fn get_to_draw(&self) -> (u32, u32, Color) {
-    if self.is_input {
-      return (0, self.id_sink, AXON_INPUT_COLOR);
-    }
-    
-    let (source, sink) = (
-      self.id_source, self.id_sink
-    );
-    let color = match self.strength {
-      s if s > 0 => AXON_POS_COLOR, // Green for excitatory
-      s if s < 0 => AXON_NEG_COLOR, // Red for inhibitory
-      _ => GRAY, // Gray for TB Killed
-    };
-    (source, sink, color)
+  pub fn is_input(&self) -> bool {
+    self.is_input
   }
 
   fn math(&mut self, delta_t:u32) {

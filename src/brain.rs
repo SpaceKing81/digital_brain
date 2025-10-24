@@ -2,12 +2,12 @@ use std::collections::{HashMap, HashSet};
 // use rayon::prelude::*;
 use macroquad::{
   // color::*, 
-  math::Vec2, rand, shapes::*, window::{screen_width,screen_height},
+  color::{GRAY}, math::Vec2, rand, shapes::*, window::{screen_height, screen_width}
 };
 
 use crate::{
   //
-  axon::Axon, neuron::Neuron, internal_consts::*, consts::*, grid::{grid::*, update_threads::*}
+  axon::Axon, consts::{self, *}, internal_consts::{self, *}, neuron::{self, Neuron}
   //
 };
 
@@ -93,10 +93,11 @@ impl Spirion {
     let mut output = Vec::new();
 
     // Cannot render more at once with no input then a single standard_deviation without a cascading upshooting of happyness values!!???
+    // I'm reading this months later and just like... wtf??
     for _ in 0..(std::cmp::min(num_iterations.unwrap_or(1),(ONE_STANDARD_DEV_THRESHOLD - 1 ).abs() as u32)) {
       // one tick passes
       self.clock += 1;
-      
+      macroquad::experimental::coroutines::wait_seconds(1.0);
       let active_neurons_to_iter: Vec<u32> = self.active_neurons.drain().collect();
       let active_neurons: HashSet<u32> = active_neurons_to_iter.iter().copied().collect();
       
@@ -179,7 +180,7 @@ impl Spirion {
   }
 
   /// Rewards Spirion with a level of intensity, ranging from 0 (None) to 10 (Endless Bliss)
-  /// Makes it feel good, hopefully making the brain happy
+  /// Makes it feel good, hopefully emulating pleasure
   pub fn reward(&mut self, intensity:Option<u32>) {
     if intensity == None {return;}
     let intensity = std::cmp::min(intensity.unwrap(), 10);
@@ -246,139 +247,70 @@ impl Spirion {
       active_neurons:HashSet::new(),
     }
   }
-  fn spring_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
-    if id1 != id2 {return None}
-    let pos1 = self.neurons[&id1].position;
-    let pos2 = self.neurons[&id2].position;
-    let distance_s = pos1.distance(pos2);
-
-    if distance_s > SPRING_NORMAL { 
-      let direction_s = (pos1 - pos2) / distance_s;
-      let spring = SPRING * distance_s;
-      return Some(spring * direction_s * TIME_STEP);
-    }
-    None
-  }
-  fn center_force(&self, id1:u32, center:Vec2) -> Option<Vec2> {
-    let pos1 = self.neurons[&id1].position;
-    let distance_g = pos1.distance(center);
-    if distance_g > GRAVITY_SUFRACE { 
-      let direction_g = (pos1 - center) / distance_g;
-      let gravity = GRAVITY * distance_g;
-      return Some(gravity * direction_g * TIME_STEP);
-    }
-  None
-  }
-  // fn electric_force(&self, id1:u32, id2:u32) -> Option<Vec2> {
-  //   if id1 == id2 {return None}
-  //   let pos1 = self.neurons[&id1].position;
-  //   let pos2 = self.neurons[&id2].position;
-  //   // Like-Charge Repulsion
-  //   let distance_e = pos1.distance(pos2);
-  //   if distance_e > ELECTRIC_SUFRACE { // Prevent division by zero
-  //     let direction_e = (pos1 - pos2) / distance_e;
-  //     let electric = COULOMB / (distance_e * distance_e);
-  //     return Some(electric * direction_e * TIME_STEP);
-  //   }
-  //   None
-  // }
+  
 }
 
 /// Graphics
 impl Spirion {
-  // TBFixed
-  pub fn render(&mut self, center: Vec2) {
-    let mut neurons_to_remove: Vec<u32> = Vec::new();
-    let mut axons_to_remove: Vec<u128> = Vec::new();
+  /*
+    Thoughts:
+    - Only the active stuff is gonna show up
+    - I want a sort of fade thing, so that it remembers which ones were fired last
+    - A sort of effect where the neurons fade out of existence as they dont get fired
+    - thinking 10 hashsets, each has 
+    */
+  
+  /// When called, will draw all the neurons that are in the tbfired list, 
+  /// along with their connected axon outputs
+  pub fn render(&mut self) {
 
-    // Step 1: build grid
-    let grid = GridCell::build_spatial_grid(&self.neurons);
-    // Step 2: do parallel update
-    let (
-      neuron_updates, 
-      axon_updates
-      ) = parallel_neuron_step(
-        &self.neurons,
-        &self.axons,
-        &grid,
-        center,
-        |id, c| self.center_force(id, c),
-        |a, b| self.spring_force(a, b),
-    );
-
-    // Step 3: apply calculated changes normally for both
-    for neuron_changes in neuron_updates {
-        if let Some(neuron) = self.neurons.get_mut(&neuron_changes.id) {
-          if neuron.check_to_kill(neuron.has_input(&self.input_ids)) {
-            neurons_to_remove.push(neuron_changes.id);
-            continue;
+    for &neuron_id in &self.active_neurons {
+        if let Some(neuron) = self.neurons.get(&neuron_id) {
+          // Draw Neuron
+          neuron.draw();
+          
+          // Draw the output axons
+          let neuron_pos = neuron.get_pos();        
+          for &out_axon in &neuron.output_axons {
+            self.draw_output_axon(&neuron_pos, out_axon);
           }
-          neuron.position = neuron_changes.new_position;
-          neuron.update(self.clock);
-        }
-    }
-
-    for axon_changes in axon_updates {
-        if let Some(axon) = self.axons.get_mut(&axon_changes.id) {
-            axon.update_happyness(axon_changes.new_happyness);
-        }
-    }
-
-    // Step 4: Update Axons + Draw
-    for (&id, axon) in self.axons.iter() {
-      if axon.strength == 0 {
-        axons_to_remove.push(id);
-      }
-      self.draw_axon(axon);
-    }
-
-    // Step 5: Draw neurons
-    for neuron in self.neurons.values() {
-        neuron.draw();
+        } else {dbg!(neuron_id);}
     }
   }
   
-  fn draw_axon(&self, axon:&Axon) {
-    let (source_id, sink_id, color) = axon.get_to_draw();
-    let (source, sink) = (
-      self.neurons.get(&source_id),
-      self.neurons.get(&sink_id),
-    );
-    let mut x = 0.0;
-    let mut y = 0.0;
-    let mut sinkx = 0.0;
-    let mut sinky = 0.0;
-
-    if let Some(source_pos) = source {
-      x = source_pos.position.x;
-      y = source_pos.position.y;
-    }
-
-    if source_id == 0 {
-     x = screen_width()/2.0; y = screen_height()
-    }
-
-    if let Some(sink_pos) = sink {
-      sinkx = sink_pos.position.x;
-      sinky = sink_pos.position.y;
-    }
-
-    draw_line (
-      x,
-      y,
-      sinkx,
-      sinky,
-      2.0,
-      color,
-    );
+  fn draw_output_axon(&self, neuron_pos:&Vec2, axon_id:u128) {
+    let (x1,y1) = (neuron_pos[0],neuron_pos[1]);
+    if let Some(axon) = self.axons.get(&axon_id) {
+      // Pick Color
+      let mut color = GRAY;
+      if axon.strength.is_negative() {color = internal_consts::AXON_NEG_COLOR;}
+      if axon.strength.is_positive() {color = internal_consts::AXON_POS_COLOR;}
+      if axon.is_input() {color = internal_consts::AXON_INPUT_COLOR;}
+      // Second Position Value
+      let mut pos2:Vec2 = Vec2::ZERO;
+      // This is the line that need to change between the two functions
+      if let Some(neuron2) = self.neurons.get(&axon.id_sink) {
+        pos2 = neuron2.get_pos();
+      }
+      let (x2,y2) = (pos2[0], pos2[1]);
+      // Draw it
+      draw_line (
+        x1,
+        y1,
+        x2,
+        y2,
+        2.0,
+        color,
+      ); 
+    } else {dbg!("Output Axon in neuron does not exist. Drawing Output axon");}
   }
+
 }
 
 
 
 
-
-
+/// Dynamic Brain changing
 impl Spirion {
   fn no_more_outputs(&mut self, neuron_id: u32) {
     if let Some(neuron) = self.neurons.get(&neuron_id) {
@@ -502,14 +434,5 @@ impl Spirion {
 
 
 /*
-Current Plan and work:
-- set up a system to input a vec every tick tied to the individual outputs
-- thinking of setting up and connecting a game of pong for test-casing inputs + outputs
-- 5x5 grid, one movable 2x1 paddle, a ball that just bounces back and forth
-- chaos and reset any time the ball hits the wall, order any time the ball hits the paddle
 
-
-current issues:
-- For some reason, inputs are directly connecting to outputs
-- The frezzing issue only occurs to non-outputs not connected to inputs
 */

@@ -15,7 +15,7 @@ use crate::consts::*;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Neuron {
   // id:u32, // name, basiclly
-  pub position: Vec2, // Position on the screen
+  position: Vec2, // Position on the screen
   base_threshold:i32,
   threshold:i32, // threshold to fire
   pub happyness:u32, // how happy it is with the firing frequency, 0 is happiest
@@ -122,9 +122,10 @@ impl Neuron {
   pub fn draw(&self) {
     if self.position.is_nan() {print!(" Caught! ")}
     if self.is_output { draw_circle(self.position.x, self.position.y, 10.0, OUTPUT_COLOR); return;}
-    let color = if self.delta_t == 0 {RED} else if self.delta_t < 5 {YELLOW} else {GRAY};
+    let color = if self.delta_t <= 10 {YELLOW} else {GRAY};
     draw_circle(self.position.x, self.position.y, 10.0, color);
   }
+  pub fn get_pos(&self) -> Vec2 {self.position}
 
 }
 // Output stuff
