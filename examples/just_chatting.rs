@@ -6,8 +6,7 @@ Colors:
     - Red connections mean inhibitory
     - Green axons mean exitory
     - Gray mean 0, null, no effect
-    - Scarlet red axons connected to the keyboard represent the input channels 
-    - Blue neurons are output sinks
+    - Blue neurons are output neurons
 
 Capable of communicating with the brain using keyboard. Type whatever you want, and you can see
 what Spirion says. White number in the top middle represents the frame-rate
