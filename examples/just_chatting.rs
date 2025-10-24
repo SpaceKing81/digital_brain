@@ -18,7 +18,7 @@ cargo run --example just_chatting
 
 */
 
-const STARTING_NEURONS:Option<u32> = Some(100);
+const STARTING_NEURONS:Option<u32> = Some(1000);
 
 
 
