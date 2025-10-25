@@ -257,7 +257,7 @@ impl Spirion {
     - Only the active stuff is gonna show up
     - I want a sort of fade thing, so that it remembers which ones were fired last
     - A sort of effect where the neurons fade out of existence as they dont get fired
-    - thinking 10 hashsets, each has 
+    - thinking 10 hashsets, each has the previous lineups up to 10 ticks, then replac
     */
   
   /// When called, will draw all the neurons that are in the tbfired list, 
