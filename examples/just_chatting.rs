@@ -110,7 +110,8 @@ async fn main() {
     ) = Spirion::spin_up_new(
         STARTING_NEURONS,
         STARTING_INPUTS, 
-        STARTING_OUTPUTS
+        STARTING_OUTPUTS,
+        false,
     );
     let mut thought_text:Vec<String> = Vec::new();
     let mut type_text:Vec<String> = vec![String::new()];

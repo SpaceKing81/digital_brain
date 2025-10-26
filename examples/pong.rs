@@ -15,8 +15,8 @@ TO RUN - Paste into terminal the following line:
 cargo run --example pong
 */
 
-const GAME_SIZE:Option<usize> = Some(30);
-const BRAIN_SIZE:Option<u32> = Some(1500);
+const GAME_SIZE:Option<usize> = Some(50);
+const BRAIN_SIZE:Option<u32> = Some(2000);
 
 
 
@@ -39,7 +39,11 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let (mut brain,inputs, outputs) = Spirion::spin_up_new(BRAIN_SIZE, (GAME_SIZE.unwrap_or(30)*GAME_SIZE.unwrap_or(30)) as u128, 2);
+  let (mut brain,inputs, outputs) = Spirion::spin_up_new(
+    BRAIN_SIZE, 
+    (GAME_SIZE.unwrap_or(30)*GAME_SIZE.unwrap_or(30)) as u128, 2,
+    true,
+  );
   let mut game = PongGame::new(GAME_SIZE, inputs, outputs);
   
   let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();
@@ -63,8 +67,8 @@ async fn main() {
 
     let outcome = game.progress_frame(direction);
     match outcome {
-      Reward::Pain => {brain.pain(Some(5));},
-      Reward::Plesure => {brain.reward(Some(5));},
+      Reward::Pain => {brain.pain(Some(9));},
+      Reward::Plesure => {brain.reward(Some(9));},
       Reward::Null => {},
     }
     // Draw Game
@@ -84,6 +88,7 @@ async fn main() {
     next_frame().await;
   }
 }
+
 #[derive(Clone, Debug)]
 struct Matrix<T> {
   data:Vec<T>, // either white or black
@@ -153,10 +158,10 @@ enum Reward {
 
 
 impl Ball {
-  fn new(center:Vec2) -> Self {
-    let x = rand::gen_range(-5.0, 5.0);
-    let y = rand::gen_range(-5.0, 5.0);
-    let vel = Vec2::new(x, y);    
+  fn new(center:Vec2, speed:usize) -> Self {
+    let x = rand::gen_range(-1.0, 1.0);
+    let y = rand::gen_range(-1.0, 1.0);
+    let vel = Vec2::new(x, y) * speed as f32;
     Ball {
       vel,
       pos:center,
@@ -180,7 +185,7 @@ impl PongGame {
       current_frame: Matrix::new(game_size, false), 
       input_list,
       output_list,
-      ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }), 
+      ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }, pixle_size_calculator(game_size).abs().round() as usize), 
       paddle_col:0,
       score: 0, 
       pixle_size: pixle_size_calculator(game_size),
@@ -349,12 +354,14 @@ impl PongGame {
     if current_data.len() != inputs.len() { dbg!(inputs.len(), current_data.len());panic!("The input-length and data length are different sizes") }
     let mut outputs:Vec<(u128,i32)> = Vec::new();
     for idx in 0..inputs.len() {
-      if current_data[idx] { 
-        outputs.push((
+      outputs.push((
           inputs[idx],
-          MAX_THRESHOLD
-        ));
-      }
+          if current_data[idx] {
+            MAX_THRESHOLD
+          } else {
+            -MAX_THRESHOLD
+          }
+      ));
     }
     if outputs.is_empty() {return None;}
     Some(outputs)

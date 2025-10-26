@@ -24,16 +24,18 @@ pub struct Spirion {
   num_of_axons: u128,
 
   active_neurons:HashSet<u32>,
+
+  limiter: bool,
 }
 // Public
 impl Spirion {
   /// New brain with specifed inputs and outputs, optional number of Neurons.
   /// Default is 500 Neurons
-  pub fn spin_up_new(num_neurons: Option<u32>, num_input: u128, num_output: u32) -> (Self, Vec<u128>, Vec<u32>) {
+  pub fn spin_up_new(num_neurons: Option<u32>, num_input: u128, num_output: u32, remove_limits:bool) -> (Self, Vec<u128>, Vec<u32>) {
     let num_neurons = num_neurons.unwrap_or(500);
     // Step 0: Create Brain
     let mut brain = Self::new();
-    
+    if remove_limits {brain.remove_limits()}
     // Step 1: Add outputs  
     for _ in 0..num_output {
       brain.add_output();
@@ -97,7 +99,10 @@ impl Spirion {
     for _ in 0..(std::cmp::min(num_iterations.unwrap_or(1),(ONE_STANDARD_DEV_THRESHOLD - 1 ).abs() as u32)) {
       // one tick passes
       self.clock += 1;
-      macroquad::experimental::coroutines::wait_seconds(1.0);
+      if self.limiter {
+        macroquad::experimental::coroutines::wait_seconds(1.0);
+      }
+
       let active_neurons_to_iter: Vec<u32> = self.active_neurons.drain().collect();
       let active_neurons: HashSet<u32> = active_neurons_to_iter.iter().copied().collect();
       
@@ -245,9 +250,12 @@ impl Spirion {
 
 
       active_neurons:HashSet::new(),
+      limiter:true
     }
   }
-  
+  fn remove_limits(&mut self) {
+    self.limiter = false;
+  }
 }
 
 /// Graphics
