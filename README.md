@@ -30,6 +30,7 @@ Goals before next checkpoint (2):
 - Streamline input-data convertions (ie camera vs microphone or swap to a pressure sensor) and data - outputs convertions (ie motor, actuator, button, video game, pnumatic pump)
 - Optimize current tick function to run faster and more efficently
 - Current rendering iteration is cool, but super cluncky. Switch it so that it only renders active neurons prob, I have this cool idea about fading the further connections into blackness or smth.
+- New test case: Snake game. Seems like a fun idea, so who knows.
 
  Next Checkpoint: Save options. Spinning up a new brain brings with it complete randomness and is dumber then the dumbest animal. Jellyfish? The ability to save the current state of the neurons (maybe a .csv file?) and then spin up a brain using saved data (again, csv probably, or some more compact data storage file). This allows continuity, and so that everytime its shut down, it can be paused and played rather then killed and reborn.
 
