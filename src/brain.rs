@@ -232,6 +232,18 @@ impl Spirion {
     //  fire them with random strengths
     //  tick once
   }
+
+  /// Allows for saving the current values incoded in Spirion as a csv file for future running
+  /// (incomplete)
+  pub fn save_as_csv(self) { // Somehow output csv file...? With exact formating rules
+    todo!();
+  }
+
+  /// Allows for building a Spirion using specified values stored in a csv file from a 
+  /// previous running (incomplete)
+  pub fn build_from_csv() -> Self {
+    todo!(); // Somehow accept a csv file...? with specific formats???
+  }
 }
 
 /// Mechanics
