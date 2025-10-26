@@ -31,7 +31,7 @@ const STARTING_NEURONS:Option<u32> = Some(1000);
 
 
 use std::collections::HashMap;
-use macroquad::prelude::{coroutines::wait_seconds, *};
+use macroquad::prelude::*;
 use digital_brain::{Spirion,MAX_THRESHOLD};
 
 fn window_conf() -> Conf {
@@ -115,10 +115,8 @@ async fn main() {
     );
     let mut thought_text:Vec<String> = Vec::new();
     let mut type_text:Vec<String> = vec![String::new()];
-    let mut count = 0;
     // Main loop
     loop {
-        count += 1;
         // Handle Ending
         if is_key_down(KeyCode::Escape) {
             println!("Terminating Brain...");
