@@ -7,7 +7,7 @@
 
 README: Literally normal Pong. Game size can be changed to whichever size of game you
 want to play, default is a 30 x 30 grid, where None = Some(30). Pick whatever level you
-want. Higher level will be harder.
+want. Higher level will be harder. Game Automaticlly increases in level at score 100.
 
 
 TO RUN - Paste into terminal the following line:
@@ -17,7 +17,7 @@ cargo run --example normal_pong
 
 
 const GAME_SIZE:Option<usize> = None;
-const GAME_LEVEL:f32 = 3.0;
+const GAME_LEVEL:f32 = 1.0;
 
 
 
@@ -57,7 +57,7 @@ async fn main() {
     game.progress_frame();
     // Draw Game
     game.draw();
-
+    if game.score >= 10 {game.level_up();}
     // Draw FPS and other info
     draw_text(
       &format!("Score: {}", game.score),
@@ -132,8 +132,8 @@ enum Move {
 
 impl Ball {
   fn new(center:Vec2, level:f32) -> Self {
-    let x = rand::gen_range(-5.0, 5.0);
-    let y = rand::gen_range(-5.0, 5.0);
+    let x = rand::gen_range(-2.0, 2.0);
+    let y = rand::gen_range(-2.0, 2.0);
     let vel = Vec2::new(x, y) * level;    
     Ball {
       vel,
@@ -329,6 +329,10 @@ impl PongGame {
   }
   fn pixle_to_grid(&self, pixle:f32) -> usize {
     (pixle/self.pixle_size).floor() as usize
+  }
+  fn level_up(&mut self) {
+    self.score = 0;
+    self.ball.vel += 1.0;
   }
 }
 fn pixle_size_calculator(game_size:usize) -> f32 {
