@@ -357,6 +357,24 @@ impl Spirion {
   }
   */
   // DONT FORGET ABOUT THIS GUY ^^^^
+  /*
+  TODO: Optimize current setup for adding-removing neurons + connections
+  Logic: 
+  - Unhappy neurons (need to massivly fix that logic too to allow for much broader resilliences. Can't have neurons
+  dying due to little suprises) will drop connnections. Neurons with no connections will be removed from the brain.
+  No redo, or capacity to stay alive if its happy, just straight in the trash.
+  - Need to periodicly run full brain cleanses as well, or allow the capability for people to do that, like brain.cleanse(). 
+  That will allow the entire thing to update fully, and reset the internal clock.
+  Happy neurons will reproduce. They will spawn copies of themselves (somehow) which will have identical connections to
+  all the neurons. Which means adding the new neuron to all the inputs and all the output neurons. Obvi special cases (IO stream)
+  are exempt. Additionally, not-unhappy neurons (wording intentional) can induce axons to replicate, causing the new 
+  axons to spontaniously form between them and random neurons.
+  Summery: 
+  Unhappy cull worst axons until no longer unhappy (except IO stream), not-unhappy add output axons to random neurons, 
+  Happy neurons induce replication of that neuron and all its connections (mutations??), connectionless neurons (in
+  input) are killed.
+
+   */
   fn add_neuron(&mut self) -> u32 {
     self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
