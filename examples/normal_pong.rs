@@ -6,7 +6,9 @@
 /*
 
 README: Literally normal Pong. Game size can be changed to whichever size of game you
-want to play, default is a 30 x 30 grid, where None = Some(30)
+want to play, default is a 30 x 30 grid, where None = Some(30). Pick whatever level you
+want. Higher level will be harder.
+
 
 TO RUN - Paste into terminal the following line:
 cargo run --example normal_pong
@@ -15,6 +17,7 @@ cargo run --example normal_pong
 
 
 const GAME_SIZE:Option<usize> = None;
+const GAME_LEVEL:f32 = 3.0;
 
 
 
@@ -36,7 +39,7 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let mut game = PongGame::new(GAME_SIZE);
+  let mut game = PongGame::new(GAME_SIZE, GAME_LEVEL);
 
   // Main loop
   loop {
@@ -128,10 +131,10 @@ enum Move {
 
 
 impl Ball {
-  fn new(center:Vec2) -> Self {
+  fn new(center:Vec2, level:f32) -> Self {
     let x = rand::gen_range(-5.0, 5.0);
     let y = rand::gen_range(-5.0, 5.0);
-    let vel = Vec2::new(x, y);    
+    let vel = Vec2::new(x, y) * level;    
     Ball {
       vel,
       pos:center,
@@ -149,10 +152,10 @@ impl Ball {
 }
 
 impl PongGame {
-  fn new(game_size:Option<usize>) -> Self {
+  fn new(game_size:Option<usize>, level:f32) -> Self {
     let mut new = PongGame { 
       current_frame: Matrix::new(game_size.unwrap_or(30), false), 
-      ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }), 
+      ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }, level), 
       paddle_col:0,
       score: 0, 
       pixle_size: pixle_size_calculator(game_size.unwrap_or(30)),
