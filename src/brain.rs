@@ -14,7 +14,7 @@ use macroquad::{
 
 use crate::{
   //
-  axon::Axon, consts::{self, *}, internal_consts::{self, *}, neuron::{self, Neuron}
+  axon::Axon, consts::{self, *}, internal_consts::{self, *}, neuron::{self, Neuron}, pos::Pos,
   //
 };
 
@@ -313,8 +313,8 @@ impl Spirion {
     }
   }
   
-  fn draw_output_axon(&self, neuron_pos:&Vec2, axon_id:u128) {
-    let (x1,y1) = (neuron_pos[0],neuron_pos[1]);
+  fn draw_output_axon(&self, neuron_pos:&Pos, axon_id:u128) {
+    let (x1,y1) = (neuron_pos.x,neuron_pos.y);
     if let Some(axon) = self.axons.get(&axon_id) {
       // Pick Color
       let mut color = GRAY;
@@ -322,12 +322,12 @@ impl Spirion {
       if axon.strength.is_positive() {color = internal_consts::AXON_POS_COLOR;}
       if axon.is_input() {color = internal_consts::AXON_INPUT_COLOR;}
       // Second Position Value
-      let mut pos2:Vec2 = Vec2::ZERO;
+      let mut pos2:Pos = Pos::ZERO();
       // This is the line that need to change between the two functions
       if let Some(neuron2) = self.neurons.get(&axon.id_sink) {
         pos2 = neuron2.get_pos();
       }
-      let (x2,y2) = (pos2[0], pos2[1]);
+      let (x2,y2) = (pos2.x, pos2.y);
       // Draw it
       draw_line (
         x1,

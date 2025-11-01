@@ -2,12 +2,13 @@ use std::collections::HashSet;
 use serde::{Serialize, Deserialize};
 // use std::collections::HashMap;
 use macroquad::{
-  color::*, math::Vec2, rand, shapes::*,
+  color::*, rand, shapes::*,
   window::{screen_width,screen_height},
 };
 
 use crate::internal_consts::*;
 use crate::consts::*;
+use crate::pos::*;
 
 
 
@@ -16,7 +17,7 @@ use crate::consts::*;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Neuron {
   // id:u32, // name, basiclly
-  position: Vec2, // Position on the screen
+  position: Pos, // Position on the screen
   base_threshold:i32,
   threshold:i32, // threshold to fire
   pub happyness:u32, // how happy it is with the firing frequency, 0 is happiest
@@ -42,7 +43,7 @@ impl Neuron {
   pub fn new(is_output:bool) -> Self {
     Neuron {
         // id,
-        position:Vec2::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
+        position:Pos::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
         happyness:25,
         base_threshold:50,
         threshold:50,
@@ -121,12 +122,12 @@ impl Neuron {
 impl Neuron {
   /// Draws the Neuron where ever it is, gives it a color based on its firing status + output
   pub fn draw(&self) {
-    if self.position.is_nan() {print!(" Caught! ")}
+    // if self.position.is_nan() {print!(" Caught! ")}
     if self.is_output { draw_circle(self.position.x, self.position.y, 10.0, OUTPUT_COLOR); return;}
     let color = if self.delta_t <= 10 {YELLOW} else {GRAY};
     draw_circle(self.position.x, self.position.y, 10.0, color);
   }
-  pub fn get_pos(&self) -> Vec2 {self.position}
+  pub fn get_pos(&self) -> Pos {self.position}
 
 }
 // Output stuff

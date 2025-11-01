@@ -3,6 +3,7 @@ mod internal_consts;
 mod axon;
 // mod grid;
 mod neuron;
+mod pos;
 mod consts;
 
 // re-export your main Brain type at the crate root:
