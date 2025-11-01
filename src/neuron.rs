@@ -1,10 +1,11 @@
 use std::collections::HashSet;
-
+use serde::{Serialize, Deserialize};
 // use std::collections::HashMap;
 use macroquad::{
   color::*, math::Vec2, rand, shapes::*,
   window::{screen_width,screen_height},
 };
+
 use crate::internal_consts::*;
 use crate::consts::*;
 
@@ -12,7 +13,7 @@ use crate::consts::*;
 
 
 /// Single neuron
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Neuron {
   // id:u32, // name, basiclly
   position: Vec2, // Position on the screen

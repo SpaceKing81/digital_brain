@@ -1,5 +1,12 @@
 use std::collections::{HashMap, HashSet};
-// use rayon::prelude::*;
+
+// File saving
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
+use serde::{Serialize, Deserialize};
+use bincode;
+
+
 use macroquad::{
   // color::*, 
   color::{GRAY}, math::Vec2, rand, shapes::*, window::{screen_height, screen_width}
@@ -11,7 +18,7 @@ use crate::{
   //
 };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Spirion {
   pub clock:u128,
 
@@ -243,14 +250,14 @@ impl Spirion {
 
   /// Allows for saving the current values incoded in Spirion as a csv file for future running
   /// (incomplete)
-  pub fn save_as_bin(self) { // Somehow output csv file...? With exact formating rules
+  pub fn save_as_bin(&self) { // Somehow output bin file...? With exact formating rules
     todo!();
   }
 
   /// Allows for building a Spirion using specified values stored in a csv file from a 
   /// previous running (incomplete)
   pub fn build_from_bin() -> Self {
-    todo!(); // Somehow accept a csv file...? with specific formats???
+    todo!(); // Somehow accept a bin file...? with specific formats???
   }
 }
 

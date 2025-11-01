@@ -1,9 +1,10 @@
 // use crate::neuron::Neuron;
 use macroquad::{rand, color::{Color,GRAY}};
+use serde::{Serialize, Deserialize};
 
 use crate::internal_consts::{AXON_INPUT_COLOR, AXON_POS_COLOR, AXON_NEG_COLOR};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Axon {
   pub id:u128, // personal id
   pub id_source:u32, // id of the signal activator
