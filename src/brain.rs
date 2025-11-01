@@ -233,6 +233,14 @@ impl Spirion {
     //  tick once
   }
 
+  /// Goes through the whole brain and cleans up neurons.
+  /// Updates every neuron, culls any dead ones, and resets the brain counter
+  /// Does not touch the active_neuron list, and does not run a tick cycle
+  pub fn cleanse(&mut self) {
+    todo!();
+  }
+
+
   /// Allows for saving the current values incoded in Spirion as a csv file for future running
   /// (incomplete)
   pub fn save_as_csv(self) { // Somehow output csv file...? With exact formating rules

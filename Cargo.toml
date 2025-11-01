@@ -17,5 +17,5 @@ path = "src/lib.rs"
 
 [dependencies]
 macroquad = "0.4"
-rayon = "1.10.0"
-dashmap = "5"
+csv = "1.1"
+
