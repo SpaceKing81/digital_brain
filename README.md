@@ -25,6 +25,7 @@ Run in terminal:
 Checkpoints Complete:
 - Checkpoint 1
 
+
 Goals before next checkpoint (2):
 - Refine current connection alterations, add building connections as well as breaking unwanted connections
 - Streamline input-data convertions (ie camera vs microphone or swap to a pressure sensor) and data - outputs convertions (ie motor, actuator, button, video game, pnumatic pump)
@@ -32,6 +33,8 @@ Goals before next checkpoint (2):
 - Current rendering iteration is cool, but super cluncky. Switch it so that it only renders active neurons prob, I have this cool idea about fading the further connections into blackness or smth.
 - New test case: Snake game. Seems like a fun idea, so who knows.
 
- Next Checkpoint: Save options. Spinning up a new brain brings with it complete randomness and is dumber then the dumbest animal. Jellyfish? The ability to save the current state of the neurons (maybe a .csv file?) and then spin up a brain using saved data (again, csv probably, or some more compact data storage file). This allows continuity, and so that everytime its shut down, it can be paused and played rather then killed and reborn.
+
+ Next Checkpoint: Save options. Spinning up a new brain brings with it complete randomness and is dumber then the dumbest animal. Jellyfish? The ability to save the current state of the neurons and then spin up a brain using saved data (.bin probably). This allows continuity, and so that everytime its shut down, it can be paused and played rather then killed and reborn.
+
 
 Checkpoint 1: Basic usage of the brain. The logic and stuff should be stable and usable and scalable. Efficency pathways should be semi-clear. I also want some practice options for testing various features

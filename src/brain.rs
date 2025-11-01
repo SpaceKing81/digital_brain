@@ -243,13 +243,13 @@ impl Spirion {
 
   /// Allows for saving the current values incoded in Spirion as a csv file for future running
   /// (incomplete)
-  pub fn save_as_csv(self) { // Somehow output csv file...? With exact formating rules
+  pub fn save_as_bin(self) { // Somehow output csv file...? With exact formating rules
     todo!();
   }
 
   /// Allows for building a Spirion using specified values stored in a csv file from a 
   /// previous running (incomplete)
-  pub fn build_from_csv() -> Self {
+  pub fn build_from_bin() -> Self {
     todo!(); // Somehow accept a csv file...? with specific formats???
   }
 }
