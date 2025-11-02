@@ -33,16 +33,16 @@ pub struct Spirion {
   active_neurons:HashSet<u32>,
 
   limiter: bool,
+  displayed: bool,
 }
 // Public
 impl Spirion {
   /// New brain with specifed inputs and outputs, optional number of Neurons.
   /// Default is 500 Neurons
-  pub fn spin_up_new(num_neurons: Option<u32>, num_input: u128, num_output: u32, remove_limits:bool) -> (Self, Vec<u128>, Vec<u32>) {
+  pub fn spin_up_new(num_neurons: Option<u32>, num_input: u128, num_output: u32) -> (Self, Vec<u128>, Vec<u32>) {
     let num_neurons = num_neurons.unwrap_or(500);
     // Step 0: Create Brain
     let mut brain = Self::new();
-    if remove_limits {brain.remove_limits()}
     // Step 1: Add outputs  
     for _ in 0..num_output {
       brain.add_output();
@@ -96,6 +96,11 @@ impl Spirion {
     (brain, input_ids, output_ids)
   }
   
+  /// Allows Spirion to operate at max speeds regardless of input
+  fn remove_limits(&mut self) {
+    self.limiter = false;
+  }
+
   /// Ticks over the brain simulation for however many specified ticks, with a default of 1 iteration.
   /// No input, however all the output id's are spat out as an Option<Vec>
   pub fn tick(&mut self, num_iterations:Option<u32>) -> Option<Vec<u32>> {
@@ -285,9 +290,7 @@ impl Spirion {
       limiter:true
     }
   }
-  fn remove_limits(&mut self) {
-    self.limiter = false;
-  }
+
 }
 
 /// Graphics
@@ -303,7 +306,7 @@ impl Spirion {
   /// When called, will draw all the neurons that are in the tbfired list, 
   /// along with their connected axon outputs
   pub fn render(&mut self) {
-
+    if !self.displayed {return}
     for &neuron_id in &self.active_neurons {
         if let Some(neuron) = self.neurons.get(&neuron_id) {
           // Draw Neuron
