@@ -15,7 +15,7 @@ impl Pos {
     }
   }
 
-  pub fn ZERO() -> Self {
+  pub fn zero() -> Self {
     Self::new(0.0, 0.0)
   }
 

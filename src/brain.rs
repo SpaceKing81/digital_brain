@@ -9,7 +9,7 @@ use bincode;
 
 use macroquad::{
   // color::*, 
-  color::{GRAY}, math::Vec2, rand, shapes::*, window::{screen_height, screen_width}
+  color::{GRAY}, rand, shapes::*, window::{screen_height, screen_width}
 };
 
 use crate::{
@@ -248,16 +248,21 @@ impl Spirion {
   }
 
 
-  /// Allows for saving the current values incoded in Spirion as a csv file for future running
+  /// Allows for saving the current values incoded in Spirion as a .bin file for future running
   /// (incomplete)
-  pub fn save_as_bin(&self) { // Somehow output bin file...? With exact formating rules
-    todo!();
+  pub fn save_as_bin(&self) -> std::io::Result<()> {
+    let pathname = "spirion.bin";
+    let file = File::create(pathname)?;
+    let writer = BufWriter::new(file);
+    bincode::serialize_into(writer, &self).unwrap();
+    println!("Succsful file download at: {}", pathname);
+    Ok(())
   }
 
-  /// Allows for building a Spirion using specified values stored in a csv file from a 
+  /// Allows for building a Spirion using specified values stored in a .bin file from a 
   /// previous running (incomplete)
   pub fn build_from_bin() -> Self {
-    todo!(); // Somehow accept a bin file...? with specific formats???
+    todo!();
   }
 }
 
@@ -322,7 +327,7 @@ impl Spirion {
       if axon.strength.is_positive() {color = internal_consts::AXON_POS_COLOR;}
       if axon.is_input() {color = internal_consts::AXON_INPUT_COLOR;}
       // Second Position Value
-      let mut pos2:Pos = Pos::ZERO();
+      let mut pos2:Pos = Pos::zero();
       // This is the line that need to change between the two functions
       if let Some(neuron2) = self.neurons.get(&axon.id_sink) {
         pos2 = neuron2.get_pos();
