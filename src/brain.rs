@@ -260,6 +260,7 @@ impl Spirion {
   /// Allows for saving the current values incoded in Spirion as a .bin file for future running
   /// (incomplete)
   pub fn save_as_bin(&self) -> std::io::Result<()> {
+    // need to have the pathname choseable, or at least so it doesnt overwrite a saved file
     let pathname = "spirion.bin";
     let file = File::create(pathname)?;
     let writer = BufWriter::new(file);
