@@ -39,11 +39,18 @@ pub struct Neuron {
 // General
 impl Neuron {
   /// Makes a new neuron
-  // pub fn new(id:u32) -> Self {
-  pub fn new(is_output:bool) -> Self {
+  pub fn new(is_output:bool, visualizable:bool) -> Self {
+    // If the brain is made to be displayed, then true, otherwise its false
     Neuron {
         // id,
-        position:Pos::new(rand::gen_range(0.0+20.0,screen_width()-20.0), rand::gen_range(0.0+10.0,screen_height()-10.0)),
+        position: if visualizable {
+          Pos::new(
+            rand::gen_range(0.0+20.0,screen_width()-20.0), 
+            rand::gen_range(0.0+10.0,screen_height()-10.0)
+          )
+        } else {
+          Pos::zero()
+        },
         happyness:25,
         base_threshold:50,
         threshold:50,
