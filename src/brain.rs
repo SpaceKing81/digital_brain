@@ -39,10 +39,11 @@ pub struct Spirion {
 impl Spirion {
   /// New brain with specifed inputs and outputs, optional number of Neurons.
   /// Default is 500 Neurons
-  pub fn spin_up_new(num_neurons: Option<u32>, num_input: u128, num_output: u32) -> (Self, Vec<u128>, Vec<u32>) {
+  pub fn spin_up_new(num_neurons: Option<u32>, num_input: u128, num_output: u32, window:bool) -> (Self, Vec<u128>, Vec<u32>) {
     let num_neurons = num_neurons.unwrap_or(500);
     // Step 0: Create Brain
     let mut brain = Self::new();
+    if window {brain.displayed = true;}
     // Step 1: Add outputs  
     for _ in 0..num_output {
       brain.add_output();
@@ -97,9 +98,12 @@ impl Spirion {
   }
   
   /// Allows Spirion to operate at max speeds regardless of input
-  fn remove_limits(&mut self) {
+  pub fn remove_limits(&mut self) {
     self.limiter = false;
   }
+
+  /// Forces a hard-stop limit to spirion's thinking speed to better align with reality
+  pub fn limit(&mut self) {self.limiter = true}
 
   /// Ticks over the brain simulation for however many specified ticks, with a default of 1 iteration.
   /// No input, however all the output id's are spat out as an Option<Vec>
@@ -287,10 +291,10 @@ impl Spirion {
 
 
       active_neurons:HashSet::new(),
-      limiter:true
+      limiter:true,
+      displayed:false,
     }
   }
-
 }
 
 /// Graphics
@@ -413,13 +417,13 @@ impl Spirion {
   fn add_neuron(&mut self) -> u32 {
     self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    self.neurons.insert(id, Neuron::new(false));
+    self.neurons.insert(id, Neuron::new(false, self.displayed));
     id
   }
   fn add_output(&mut self) -> u32 {
     self.num_of_neurons +=1;
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    self.neurons.insert(id, Neuron::new(true));
+    self.neurons.insert(id, Neuron::new(true, self.displayed));
     self.output_ids.insert(id);
     id
   }
