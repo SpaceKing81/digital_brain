@@ -119,6 +119,8 @@ async fn main() {
     loop {
         // Handle Ending
         if is_key_down(KeyCode::Escape) {
+            println!("Saving Brain...");
+            brain.save_as_bin();
             println!("Terminating Brain...");
             break;
         }
