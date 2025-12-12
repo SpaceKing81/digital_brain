@@ -116,7 +116,13 @@ async fn main() {
     let mut type_text:Vec<String> = vec![String::new()];
     
     // From bin
-    
+    // let (
+    //     mut brain, 
+    //     inputs, 
+    //     outputs
+    // ) = Spirion::build_from_bin(
+    //     "Spirion_speaking.bin",
+    // );
     
     // Main loop
     loop {
