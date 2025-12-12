@@ -98,32 +98,29 @@ const CLICKABLE_KEYS:[KeyCode;42] = [
 async fn main() {
     // Get name
     let mut user_name = String::new();
-    io::stdin().read_line(&mut user_name).unwrap();
+    std::io::stdin().read_line(&mut user_name).unwrap();
 
     // Initialize the brain
     let mut input =String::new();
-    io::stdin().read_line(&mut input).unwrap();
+    std::io::stdin().read_line(&mut input).unwrap();
 
-    if input == "0" {
-        let (
-            mut brain, 
-            inputs, 
-            outputs
-        ) = Spirion::spin_up_new(
+    let (   
+        mut brain, 
+        inputs, 
+        outputs) =
+
+        if input == "0" {
+            Spirion::spin_up_new(
             STARTING_NEURONS,
             STARTING_INPUTS, 
             STARTING_OUTPUTS,
             true,
-        );
+        )
     } else {
-        let (   
-            mut brain, 
-            inputs, 
-            outputs
-        ) = Spirion::build_from_bin(
+            Spirion::build_from_bin(
             "Spirion_speaking.bin",
-        );
-    }
+        )
+    };
 
     println!("Starting simulation...");
     
