@@ -97,32 +97,38 @@ const CLICKABLE_KEYS:[KeyCode;42] = [
 #[macroquad::main(window_conf)]
 async fn main() {
     // Get name
-    let user_name="User".to_string();
+    let mut user_name = String::new();
+    io::stdin().read_line(&mut user_name).unwrap();
 
     // Initialize the brain
-    // From scratch
+    let mut input =String::new();
+    io::stdin().read_line(&mut input).unwrap();
+
+    if input == "0" {
+        let (
+            mut brain, 
+            inputs, 
+            outputs
+        ) = Spirion::spin_up_new(
+            STARTING_NEURONS,
+            STARTING_INPUTS, 
+            STARTING_OUTPUTS,
+            true,
+        );
+    } else {
+        let (   
+            mut brain, 
+            inputs, 
+            outputs
+        ) = Spirion::build_from_bin(
+            "Spirion_speaking.bin",
+        );
+    }
+
     println!("Starting simulation...");
-    let (
-        mut brain, 
-        inputs, 
-        outputs
-    ) = Spirion::spin_up_new(
-        STARTING_NEURONS,
-        STARTING_INPUTS, 
-        STARTING_OUTPUTS,
-        true,
-    );
+    
     let mut thought_text:Vec<String> = Vec::new();
     let mut type_text:Vec<String> = vec![String::new()];
-    
-    // From bin
-    // let (
-    //     mut brain, 
-    //     inputs, 
-    //     outputs
-    // ) = Spirion::build_from_bin(
-    //     "Spirion_speaking.bin",
-    // );
     
     // Main loop
     loop {
