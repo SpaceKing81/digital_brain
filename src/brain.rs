@@ -259,9 +259,7 @@ impl Spirion {
 
   /// Allows for saving the current values incoded in Spirion as a .bin file for future running
   /// (in....complete?)
-  pub fn save_as_bin(&self) -> std::io::Result<()> {
-    // need to have the pathname choseable, or at least so it doesnt overwrite a saved file
-    let pathname = "spirion.bin";
+  pub fn save_as_bin(&self, pathname:&str) -> std::io::Result<()> {
     let file = File::create(pathname)?;
     let writer = BufWriter::new(file);
     bincode::serialize_into(writer, &self).unwrap();
@@ -270,11 +268,16 @@ impl Spirion {
   }
 
   /// Allows for building a Spirion using specified values stored in a .bin file from a 
-  /// previous running (in...complete?)
-  pub fn build_from_bin(full_pathname:&str) -> bincode::Result<Self> {
-    let mut file = File::open(full_pathname)?;
+  /// previous running. Returns Spirion, inputs and outputs (in...complete?)
+  pub fn build_from_bin(full_pathname:&str) -> (Self, Vec<u128>, Vec<u32>) {
+    let file = File::open(full_pathname).unwrap();
     let reader = BufReader::new(file);
-    bincode::deserialize_from(reader)
+    let brain: Self = bincode::deserialize_from(reader).unwrap();
+
+    let input:Vec<u128> = (&brain).input_ids.iter().copied().collect();
+    let output:Vec<u32> = (&brain).output_ids.iter().copied().collect();
+    
+    (brain, input, output)
   }
 }
 

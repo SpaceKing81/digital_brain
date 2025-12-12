@@ -100,6 +100,7 @@ async fn main() {
     let user_name="User".to_string();
 
     // Initialize the brain
+    // From scratch
     println!("Starting simulation...");
     let (
         mut brain, 
@@ -113,12 +114,16 @@ async fn main() {
     );
     let mut thought_text:Vec<String> = Vec::new();
     let mut type_text:Vec<String> = vec![String::new()];
+    
+    // From bin
+    
+    
     // Main loop
     loop {
         // Handle Ending
         if is_key_down(KeyCode::Escape) {
             println!("Saving Brain...");
-            brain.save_as_bin();
+            brain.save_as_bin("Spirion.bin");
             println!("Terminating Brain...");
             break;
         }
