@@ -97,6 +97,13 @@ const CLICKABLE_KEYS:[KeyCode;42] = [
 #[macroquad::main(window_conf)]
 async fn main() {
     // Get name
+    draw_text(
+        &format!("Type your name"),
+        screen_width()/2.0,
+        200.,
+        200.,
+        WHITE,
+    );
     let mut user_name = String::new();
     std::io::stdin().read_line(&mut user_name).unwrap();
 
