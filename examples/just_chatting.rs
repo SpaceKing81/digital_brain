@@ -123,7 +123,7 @@ async fn main() {
         // Handle Ending
         if is_key_down(KeyCode::Escape) {
             println!("Saving Brain...");
-            brain.save_as_bin("Spirion.bin");
+            brain.save_as_bin("Spirion_speaking.bin");
             println!("Terminating Brain...");
             break;
         }
