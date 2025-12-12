@@ -98,8 +98,6 @@ const CLICKABLE_KEYS:[KeyCode;42] = [
 async fn main() {
     // Get name
     let user_name="User".to_string();
-    
-
 
     // Initialize the brain
     println!("Starting simulation...");
