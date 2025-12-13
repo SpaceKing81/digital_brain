@@ -14,8 +14,8 @@ How to use:
 
 Download the nessisary files, import {use digital_brain::Spirion;}
 Make use of the various tools avaible. Right now there are not a lot.
-Can run example files as well, currently there are 2 (Technically)
 
+Can run example files as well, currently there are 2 (Technically)
 Run in terminal:
   - cargo run --example just_chatting
   - cargo run --example pong

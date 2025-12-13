@@ -67,6 +67,47 @@ impl Neuron {
         avg_t:0,
     }
   }
+  pub fn new_with_data(
+    pos:Option<Pos>, 
+    happyness:Option<u32>,
+    base_threshold:Option<i32>,
+    threshold:Option<i32>,
+    is_output:Option<bool>,
+    
+    input_memory:Option<Vec<i32>>,
+    inputs:Option<Vec<i32>>,
+
+    input_axons:Option<Vec<u128>>,
+    output_axons:Option<Vec<u128>>,
+    
+    tick_last_fired:Option<u128>,
+    delta_t:Option<u32>,
+    avg_t:Option<u32>,
+  ) -> Self {
+    let pos = pos.unwrap_or(
+      Vec2::new(rand::gen_range(20.0,screen_width()-20.0), 
+        rand::gen_range(10.0,screen_height()-10.0)
+      ));
+
+    Neuron {
+        // id,
+        pos,
+        happyness:happyness.unwrap_or(25),
+        base_threshold:base_threshold.unwrap_or(50),
+        threshold:threshold.unwrap_or(50),
+        is_output: is_output.unwrap_or(false),
+        
+        input_memory:input_memory.unwrap_or(vec![0,0,0,0,0]),
+        inputs:input_memory.unwrap_or(Vec::new()),
+
+        input_axons:input_axons.unwrap_or(Vec::new()),
+        output_axons:output_axons.unwrap_or(Vec::new()),
+        
+        tick_last_fired:tick_last_fired.unwrap_or_default(),
+        delta_t:delta_t.unwrap_or_default(),
+        avg_t:avg_t.unwrap_or_default(),
+    }
+  }
   /// Rolls a save check to see if it should die or gets another chance at life, and if so how many.
   /// Only relies on happyness value, but only really used if it doesnt have any outputs or inputs left.
   pub fn roll_save_check(&self, output:bool) -> Option<i32> {
@@ -89,7 +130,8 @@ impl Neuron {
   
   /// Housekeeping stuff, memory management, time updating, basic universal update.
   /// Updates everything that needs to be refreshed whenever it becomes an active neuron.
-  pub fn update(&mut self, time:u128) {
+  /// Returns how may (inputs to add, outputs to add)
+  pub fn update(&mut self, time:u128) -> (i16,i16) {
     // Clock update, updates action as needed
     let old_time = self.delta_t;
     self.tick(time);
@@ -105,8 +147,16 @@ impl Neuron {
       // Updates memory as accurate to the times
       self.forget(Some((self.delta_t-old_time)as usize));
     }
+
+
+
+    todo!();
   }
-  
+  pub fn want_to_reproduce(&self) -> bool {
+    // needs to be happy enough to want to reproduce
+    self.happyness < (MAX_HAPPY_VALUE/4)
+  }
+
   fn tick(&mut self, time:u128) {
     self.delta_t = (time - self.tick_last_fired) as u32;
   } 
@@ -147,11 +197,10 @@ impl Neuron {
   } 
   /// Checks if the neuron should be killed
   pub fn check_to_kill(&self, has_input: bool) -> bool {
-    // return false;
     if has_input {return false}
     if self.is_output {return false}
     if self.happyness >= MAX_HAPPY_VALUE {return true}
-    // if self.delta_t > INACTIVITY_DEATH_TIME {return true}
+    if self.delta_t >= INACTIVITY_DEATH_TIME {return true}
     false
   }
 
