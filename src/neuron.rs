@@ -131,7 +131,7 @@ impl Neuron {
   /// Housekeeping stuff, memory management, time updating, basic universal update.
   /// Updates everything that needs to be refreshed whenever it becomes an active neuron.
   /// Returns how may (inputs to add, outputs to add)
-  pub fn update(&mut self, time:u128) -> (i16,i16) {
+  pub fn update(&mut self, time:u128) -> (i16, i16) {
     // Clock update, updates action as needed
     let old_time = self.delta_t;
     self.tick(time);
@@ -149,8 +149,33 @@ impl Neuron {
     }
 
 
+    let unit = MAX_HAPPY_VALUE/10;
+    let threshold = MAX_HAPPY_VALUE/2;
+    // Good values (under half is happy, over is unhappy)
+    let iter:i16 = if (MAX_HAPPY_VALUE as f32)/(self.happyness as f32) > 2.0 {
+      let mut iter_good = 0;
+      for i in 0..6 {
+        if threshold <= (self.happyness + ((iter_good+1)*unit)) {
+          break;
+        }
+        iter_good += 1;
+      }
+      iter_good as i16
+    } else {
+      let mut iter_bad = 0;
+      for i in 0..6 {
+        if threshold >= (self.happyness - ((iter_bad+1)*unit)) {
+          break;
+        }
+        iter_bad += 1;
+      }
+      iter_bad as i16 * -1
+    };
+    let percent_in = rand::gen_range(0.0, 1.0);
+    let out = (percent_in * iter as f32).round() as i16;
+    let inn = (1.0 - percent_in * iter as f32).round() as i16;
 
-    todo!();
+    (inn, out)
   }
   pub fn want_to_reproduce(&self) -> bool {
     // needs to be happy enough to want to reproduce

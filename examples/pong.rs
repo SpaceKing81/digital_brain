@@ -23,6 +23,8 @@ const BRAIN_SIZE:Option<u32> = Some(3000);
 
 
 
+
+
 use macroquad::{prelude::*};
 use digital_brain::Spirion;
 use digital_brain::MAX_THRESHOLD;
@@ -52,6 +54,7 @@ async fn main() {
 
   // Main loop
   loop {
+    println!("Started simulation!");
     // Handle Ending
     if is_key_down(KeyCode::Escape) {
       println!("Terminating");
@@ -60,6 +63,7 @@ async fn main() {
     }
     // Brain thinking
     let outputs = brain.tick(None);
+    dbg!("1.pong");
     let direction = game.output_to_moves(outputs);
     // Drawing a frame
     { 
