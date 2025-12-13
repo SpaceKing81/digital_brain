@@ -16,7 +16,7 @@ cargo run --example pong
 */
 
 const GAME_SIZE:Option<usize> = Some(50);
-const BRAIN_SIZE:Option<u32> = Some(2000);
+const BRAIN_SIZE:Option<u32> = Some(3000);
 
 
 
@@ -39,11 +39,12 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let (mut brain,inputs, outputs) = Spirion::spin_up_new(
-    BRAIN_SIZE, 
-    (GAME_SIZE.unwrap_or(30)*GAME_SIZE.unwrap_or(30)) as u128, 2,
-    true,
-  );
+  // let (mut brain,inputs, outputs) = Spirion::spin_up_new(
+  //   BRAIN_SIZE, 
+  //   (GAME_SIZE.unwrap_or(30)*GAME_SIZE.unwrap_or(30)) as u128, 2,
+  //   true,
+  // );
+  let (mut brain, inputs, outputs) =Spirion::build_from_bin("spirion_pong");
   let mut game = PongGame::new(GAME_SIZE, inputs, outputs);
   
   let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();
@@ -54,6 +55,7 @@ async fn main() {
     // Handle Ending
     if is_key_down(KeyCode::Escape) {
       println!("Terminating");
+      brain.save_as_bin("spirion_pong");
       break;
     }
     // Brain thinking
