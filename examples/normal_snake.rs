@@ -187,12 +187,12 @@ impl Apple {
 impl SnakeGame {
   fn new(game_size:Option<usize>, level:f32) -> Self {
     
-    todo!();
     let (row, col) = new.get_ball_pos();
     new.current_frame.set(row, col, true).unwrap_or_default();
     new.current_frame.set(0,0, true).unwrap_or_default();
     new.current_frame.set(0,1, true).unwrap_or_default();
-    new
+    new;
+    todo!();
   }
   fn progress_frame(&mut self)  {
     self.move_paddle(get_move());
