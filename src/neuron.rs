@@ -84,21 +84,21 @@ impl Neuron {
     delta_t:Option<u32>,
     avg_t:Option<u32>,
   ) -> Self {
-    let pos = pos.unwrap_or(
-      Vec2::new(rand::gen_range(20.0,screen_width()-20.0), 
+    let position = pos.unwrap_or(
+      Pos::new(rand::gen_range(20.0,screen_width()-20.0), 
         rand::gen_range(10.0,screen_height()-10.0)
       ));
 
     Neuron {
         // id,
-        pos,
+        position,
         happyness:happyness.unwrap_or(25),
         base_threshold:base_threshold.unwrap_or(50),
         threshold:threshold.unwrap_or(50),
         is_output: is_output.unwrap_or(false),
         
         input_memory:input_memory.unwrap_or(vec![0,0,0,0,0]),
-        inputs:input_memory.unwrap_or(Vec::new()),
+        inputs:inputs.unwrap_or(Vec::new()),
 
         input_axons:input_axons.unwrap_or(Vec::new()),
         output_axons:output_axons.unwrap_or(Vec::new()),

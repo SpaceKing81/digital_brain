@@ -152,28 +152,28 @@ impl Spirion {
           // Find the requisate number of input-output additions
           if num_in.is_negative() {
             for _ in 0..num_in.abs() {
-              let index = gen_range(0, neuron.input_axons.len());
+              let index = rand::gen_range(0, neuron.input_axons.len());
               let id = neuron.input_axons[index];
               axons_to_remove.push(id);
             }
           } else {
             let mut sources = Vec::new();
             for _ in 0..num_in {
-              let source = gen_range(1, self.num_of_neurons);
+              let source = rand::gen_range(1, self.num_of_neurons);
               sources.push(source);
             }
             axons_to_add_sink.push((neuron_id,sources));
           }
           if num_out.is_negative() {
             for _ in 0..num_out.abs() {
-              let index = gen_range(0, neuron.output_axons.len());
+              let index = rand::gen_range(0, neuron.output_axons.len());
               let id = neuron.output_axons[index];
               axons_to_remove.push(id);
             }
           } else {
             let mut sinks = Vec::new();
             for _ in 0..num_out {
-              let sink = gen_range(1, self.num_of_neurons);
+              let sink = rand::gen_range(1, self.num_of_neurons);
               sinks.push(sink);
             }
             axons_to_add_source.push((neuron_id,sinks));
@@ -481,19 +481,19 @@ impl Spirion {
     id
   }
   fn spawn_new_neuron(&mut self, inp_num:usize, out_num:usize) -> u32 {
-    let neuron = Neuron::new(false);
+    let neuron = Neuron::new(false, self.displayed);
     let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    self.neurons.insert(id, Neuron::new(false));
+    self.neurons.insert(id, Neuron::new(false, self.displayed));
     self.num_of_neurons += 1;
 
     while inp_num > neuron.input_axons.len() {
-      let source_id = gen_range(1, self.neurons.len() as u32);
+      let source_id = rand::gen_range(1, self.neurons.len() as u32);
       if let Some(source) = self.neurons.get_mut(&source_id) {
         self.add_axon(source_id, id);
       }
     }
     while out_num > neuron.output_axons.len() {
-      let sink_id = gen_range(1, self.neurons.len() as u32);
+      let sink_id = rand::gen_range(1, self.neurons.len() as u32);
       if let Some(source) = self.neurons.get_mut(&sink_id) {
         self.add_axon(sink_id, id);
       }
