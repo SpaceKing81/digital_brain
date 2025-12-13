@@ -7,7 +7,7 @@
 
 README: Literally normal Pong. Game size can be changed to whichever size of game you
 want to play, default is a 30 x 30 grid, where None = Some(30). Pick whatever level you
-want. Higher level will be harder. Game Automaticlly increases in level at score 100.
+want. Higher level will be harder. Game Automaticlly increases in level when get 100 points
 
 
 TO RUN - Paste into terminal the following line:
@@ -111,75 +111,43 @@ matrix
 
 }
 
-struct SnakeGame {
+struct PongGame {
   current_frame:Matrix<bool>,
-  snake:Snake,
-  
+  ball:Ball,
+  paddle_col:usize,
   score:usize,
   pixle_size:f32,
 }
-struct Snake {
-  head:Vec2,
-  dir:Dir,
-  path:Vec<Vec2>,
-  length:u32,
+struct Ball {
+  pos:Vec2,
+  vel:Vec2,
 }
-
-struct Apple {
-  row:usize,
-  col:usize,
-}
-
 #[derive(Clone, Copy)]
-enum Dir {
-  Left,
-  Right,
+enum Move {
   Up,
   Down,
+  None,
 }
 
 
-impl Snake {
+impl Ball {
   fn new(center:Vec2, level:f32) -> Self {
-    // let x = rand::gen_range(-1.0, 1.0);
-    // let dir = if x.is_sign_positive() {
-    //   Dir::Up
-    // } else {
-    //   Dir::Down
-    // };
-    let dir = Dir::Up;
-    Self {
-      dir,
-      head:center,
-      path:Vec::new().push(center),
-      length:1,
+    let x = rand::gen_range(-2.0, 2.0);
+    let y = rand::gen_range(-2.0, 2.0);
+    let vel = Vec2::new(x, y) * level;    
+    Ball {
+      vel,
+      pos:center,
     }
   }
   fn forward(&mut self) {
-    let dir = self.dir;
-    self.path.remove(0);
-    self.path.push(self.head);
-    self.head = match dir {
-      Dir::Down => {self.head + Vec2::new(0, -1)}
-      Dir::Left =>{self.head + Vec2::new(-1, 0)}
-      Dir::Right =>{self.head + Vec2::new(1, 0)}
-      Dir::Up =>{self.head + Vec2::new(0, 1)}
-    };
+    self.pos += self.vel;
   }
-  fn check_edge_collide(&mut self) {
-    todo!()
+  fn bounce_top_bottom(&mut self) {
+    self.vel = Vec2::new(self.vel.x, 0.0-self.vel.y);
   }
-  fn check_self_collide(&mut self) {
-    todo!()
-  }
-}
-
-impl Apple {
-  fn new() -> Self {
-    todo!()
-  }
-  fn change_pos(&mut self, snake:&Snake) {
-    todo!()
+  fn bounce_left_right(&mut self) {
+    self.vel = Vec2::new(0.0-self.vel.x, self.vel.y);
   }
 }
 
