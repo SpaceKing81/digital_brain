@@ -44,7 +44,7 @@ async fn main() {
   //   (GAME_SIZE.unwrap_or(30)*GAME_SIZE.unwrap_or(30)) as u128, 2,
   //   true,
   // );
-  let (mut brain, inputs, outputs) =Spirion::build_from_bin("spirion_pong");
+  let (mut brain, inputs, outputs) = Spirion::build_from_bin("spirion_pong");
   let mut game = PongGame::new(GAME_SIZE, inputs, outputs);
   
   let initial_pos: Option<Vec<(u128,i32)>> = game.frame_to_inputs();
