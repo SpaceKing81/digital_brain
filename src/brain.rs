@@ -505,6 +505,16 @@ impl Spirion {
     dbg!("2.neuron.spawn_new");
     self.num_of_neurons += 1;
 
+    /*
+    bug notes. There is a strange bug happening here. the logic should be increasing the number of
+    connections until it surpasses a threshold, and then it continues. Gets stuck in an infinite loop
+    because its calling spawn_new(its a new neuron that needs friends) and its just not getting any
+    more connections. I need to still check the axon list and how thats changing, but the weirdest part
+    is that its running fine through all the checks but seems to not be affecting anything at all...
+
+    idk, going to bed. The trail of dbg can be cleaned up later. night
+     */
+
     for i in 0..30
     //  inp_num > neuron.input_axons.len() 
      {
