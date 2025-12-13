@@ -152,7 +152,7 @@ impl Snake {
     Self {
       dir,
       head:center,
-      path:Vec::new().push(center),
+      path:vec![center],
       length:1,
     }
   }
@@ -161,10 +161,10 @@ impl Snake {
     self.path.remove(0);
     self.path.push(self.head);
     self.head = match dir {
-      Dir::Down => {self.head + Vec2::new(0, -1)}
-      Dir::Left =>{self.head + Vec2::new(-1, 0)}
-      Dir::Right =>{self.head + Vec2::new(1, 0)}
-      Dir::Up =>{self.head + Vec2::new(0, 1)}
+      Dir::Down => {self.head + Vec2::new(0.0, -1.0)}
+      Dir::Left =>{self.head + Vec2::new(-1.0, 0.0)}
+      Dir::Right =>{self.head + Vec2::new(1.0, 0.0)}
+      Dir::Up =>{self.head + Vec2::new(0.0, 1.0)}
     };
   }
   fn check_edge_collide(&mut self) {
@@ -184,15 +184,10 @@ impl Apple {
   }
 }
 
-impl PongGame {
+impl SnakeGame {
   fn new(game_size:Option<usize>, level:f32) -> Self {
-    let mut new = PongGame { 
-      current_frame: Matrix::new(game_size.unwrap_or(30), false), 
-      ball: Ball::new(Vec2 { x: screen_width()/2.0, y: screen_height()/2.0 }, level), 
-      paddle_col:0,
-      score: 0, 
-      pixle_size: pixle_size_calculator(game_size.unwrap_or(30)),
-    };
+    
+    todo!();
     let (row, col) = new.get_ball_pos();
     new.current_frame.set(row, col, true).unwrap_or_default();
     new.current_frame.set(0,0, true).unwrap_or_default();
