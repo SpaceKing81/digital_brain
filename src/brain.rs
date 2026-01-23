@@ -227,9 +227,6 @@ impl Spirion {
         self.spawn_new_neuron(inp, out);
       }
 
-      todo!();
-      
-
   }
   if output.is_empty() {
     return None;
