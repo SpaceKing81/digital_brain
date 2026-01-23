@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 // File saving
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Read};
+use std::io::{BufReader, BufWriter, Read, sink};
 use serde::{Serialize, Deserialize};
 use bincode::{self, deserialize};
 
@@ -77,7 +77,7 @@ impl Spirion {
     for id in &neuron_ids[..num_neurons as usize] {
       if let Some(neuron) = brain.neurons.get(id) {
         if neuron.output_axons.is_empty() && !neuron.is_output {
-          brain.no_more_outputs(*id);
+          brain.find_happier_space(*id);
         }
       }
     }
@@ -120,10 +120,8 @@ impl Spirion {
     ) {
       // one tick passes
       self.clock += 1;
-      dbg!("1.brain.tick");
       if self.limiter {
         macroquad::experimental::coroutines::wait_seconds(1.0);
-        dbg!("2.brain.tick");
       }
 
       let active_neurons_to_iter: Vec<u32> = self.active_neurons.drain().collect();
@@ -140,7 +138,6 @@ impl Spirion {
       let mut neurons_to_add:Vec<(usize,usize)> = Vec::new();
 
       for neuron_id in active_neurons_to_iter {
-        dbg!("3.brain.tick");
         let mut has_input = false;
         if let Some(neuron) = self.neurons.get_mut(&neuron_id) {
           // update the input neuron happyness
@@ -162,7 +159,6 @@ impl Spirion {
           // or add if pos. the num_in is for inputs, num_out for outputs
           if num_in.is_negative() {
             for _ in 0..num_in.abs() {
-              dbg!("4.brain.tick");
               let index = rand::gen_range(0, neuron.input_axons.len());
               let id = neuron.input_axons[index];
               axons_to_remove.push(id);
@@ -170,7 +166,6 @@ impl Spirion {
           } else {
             let mut sources = Vec::new();
             for _ in 0..num_in {
-              dbg!("5.brain.tick");
               let source = rand::gen_range(1, self.num_of_neurons);
               sources.push(source);
             }
@@ -178,7 +173,7 @@ impl Spirion {
           }
           if num_out.is_negative() {
             for _ in 0..num_out.abs() {
-              dbg!("6.brain.tick");
+
               let index = rand::gen_range(0, neuron.output_axons.len());
               let id = neuron.output_axons[index];
               axons_to_remove.push(id);
@@ -186,7 +181,6 @@ impl Spirion {
           } else {
             let mut sinks = Vec::new();
             for _ in 0..num_out {
-              dbg!("7.brain.tick");
               let sink = rand::gen_range(1, self.num_of_neurons);
               sinks.push(sink);
             }
@@ -208,7 +202,6 @@ impl Spirion {
             // Check if its an output
             if neuron.is_output {output.push(neuron_id);continue;}
             for axon_id in output_axons {
-              dbg!("8.brain.tick");
               if let Some(axon) = self.axons.get_mut(&axon_id) {
                 let (input_id, strength) = axon.fire_axon(delta_t);
                 if strength != 0 {
@@ -224,16 +217,14 @@ impl Spirion {
               }}}}}
 
       // Remove stuff
-      for axon_id in axons_to_remove {self.remove_axon(axon_id); dbg!("9.brain.tick");}
-      for neuron_id in neurons_to_remove {self.no_more_outputs(neuron_id);dbg!("10.brain.tick");}
+      for axon_id in axons_to_remove {self.remove_axon(axon_id);}
+      for neuron_id in neurons_to_remove {self.remove_neuron(neuron_id);}
 
       // TODO: add sink axons
       // TODO: add source axons
       
       for (inp,out) in neurons_to_add {
-        dbg!("11.brain.tick");
         self.spawn_new_neuron(inp, out);
-        dbg!("12.brain.tick");
       }
 
       todo!();
@@ -436,43 +427,16 @@ impl Spirion {
 
 /// Dynamic Brain changing
 impl Spirion {
-  fn no_more_outputs(&mut self, neuron_id: u32) {
-    if let Some(neuron) = self.neurons.get(&neuron_id) {
-      if neuron.is_output {panic!("outputs never have output axions")}
-      if let Some(roll) = neuron.roll_save_check(false) {
-          // Create new connections
-          for _ in 0..roll {
-            let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
-            if sink_id != neuron_id {
-              self.add_axon(neuron_id, sink_id);
-            }
-          }
-        } else {
-          // Commit suicide
-          self.remove_neuron(neuron_id);
-      }
-    }
+  fn find_happier_space(&mut self, neuron_id: u32) {
+    /*
+    Use to be the "no more outputs" fn
+    The idea of this is that it will seperate the death and the search
+    If a neuron is too unhappy, it'll get picked up by the garbage collector
+    And fully get killed. This is for the ones that get through but still lonely
+     */
+    todo!();
   }
-  /*
-  fn no_more_inputs(&mut self, neuron_id: u32) {
-    if let Some(neuron) = self.neurons.get(&neuron_id) {
-      let save = if neuron.is_output {neuron.roll_save_check(true)} else {neuron.roll_save_check(false)};
-      if let Some(roll) = save {
-          // Create new connections
-          for _ in 0..roll {
-            let sink_id = *self.neurons.keys().nth(rand::gen_range(0,self.neurons.len())).unwrap();
-            if sink_id != neuron_id {
-              self.add_axon(neuron_id, sink_id);
-            }
-          }
-        } else {
-          // Commit suicide
-          self.remove_neuron(neuron_id);
-      }
-    }
-  }
-  */
-  // DONT FORGET ABOUT THIS GUY ^^^^
+  
   /*
   TODO: Optimize current setup for adding-removing neurons + connections
   Logic: 
@@ -498,11 +462,9 @@ impl Spirion {
     id
   }
   fn spawn_new_neuron(&mut self, inp_num:usize, out_num:usize) -> u32 {
-    let neuron = Neuron::new(false, self.displayed);
-    dbg!("1.neuron.spawn_new");
-    let id = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    self.neurons.insert(id, Neuron::new(false, self.displayed));
-    dbg!("2.neuron.spawn_new");
+    let neuron_new = Neuron::new_with_time(self.displayed, self.clock);
+    let id_new = self.neurons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
+    self.neurons.insert(id_new, Neuron::new(false, self.displayed));
     self.num_of_neurons += 1;
 
     /*
@@ -513,27 +475,33 @@ impl Spirion {
     is that its running fine through all the checks but seems to not be affecting anything at all...
 
     idk, going to bed. The trail of dbg can be cleaned up later. night
-     */
+    
+    Fuck you past me. Fuck you.
 
-    for i in 0..30
-    //  inp_num > neuron.input_axons.len() 
+    Found the bug. The length is just perpetually returning 0 despite having values in it?
+    I don't know why this is even a problem in the first place, the .len() is broken ig?
+    
+    Bug no longer there as long as I don't check the length...? as of 1/22/26
+     */
+    for _ in 0..inp_num
+    // while inp_num > neuron_new.input_axons.len() 
      {
-      dbg!(neuron.input_axons.len());
+      // Adding to the inputs, so the new is the sink
       let source_id = rand::gen_range(1, self.neurons.len() as u32);
       if let Some(_) = self.neurons.get_mut(&source_id) {
-        self.add_axon(source_id, id);
+        self.add_axon(source_id, id_new);
       }
     }
-    while out_num > neuron.output_axons.len() {
-      dbg!("4.neuron.spawn_new");
-      todo!();
+    for _ in 0..out_num
+    // while out_num > neuron_new.output_axons.len()
+    {
+      // Adding to the outputs, so the new is the source
       let sink_id = rand::gen_range(1, self.neurons.len() as u32);
       if let Some(_) = self.neurons.get_mut(&sink_id) {
-        dbg!("5.neuron.spawn_new");
-        self.add_axon(sink_id, id);
+        self.add_axon(id_new, sink_id);
       }
     }
-    id
+    id_new
   }
   fn add_output(&mut self) -> u32 {
     self.num_of_neurons +=1;
@@ -543,25 +511,6 @@ impl Spirion {
     id
   }
   
-  fn add_axon(
-    &mut self, 
-    source_id: u32, 
-    sink_id: u32,
-  ) -> u128 {
-    self.num_of_axons +=1;
-    let id = self.axons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
-    let axon = Axon::new(source_id, sink_id, id, false);
-    self.axons.insert(id, axon);
-
-    // Update neuron connections
-    if let Some(source_neuron) = self.neurons.get_mut(&source_id) {
-      source_neuron.output_axons.push(id);
-    }
-    if let Some(sink_neuron) = self.neurons.get_mut(&sink_id) {
-      sink_neuron.input_axons.push(id);
-    }
-    id
-  }
   fn add_input(&mut self, sink_id:u32) -> u128 {
     self.num_of_axons +=1;
     let id = self.axons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
@@ -574,6 +523,24 @@ impl Spirion {
     } else {dbg!(sink_id);}
     // Put it in the brain
     self.input_ids.insert(id);
+    id
+  }
+  fn add_axon(
+    &mut self, 
+    source_id: u32, 
+    sink_id: u32,
+  ) -> u128 {
+    self.num_of_axons +=1;
+    let id = self.axons.keys().max().unwrap_or(&0) + 1; // Generate a unique ID
+    let axon = Axon::new(source_id, sink_id, id, false);
+    self.axons.insert(id, axon);
+    // Update neuron connections
+    if let Some(source_neuron) = self.neurons.get_mut(&source_id) {
+      source_neuron.output_axons.push(id);
+    }
+    if let Some(sink_neuron) = self.neurons.get_mut(&sink_id) {
+      sink_neuron.input_axons.push(id);
+    }
     id
   }
 

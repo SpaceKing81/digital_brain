@@ -37,10 +37,32 @@ pub struct Neuron {
 } 
 
 // General
+/// Default is not-visualizable, and a regualar neuron made during initilization
+impl Default for Neuron {
+  fn default() -> Self {
+    Neuron {
+      // id,
+      position: Pos::zero(),
+      happyness:25,
+      base_threshold:50,
+      threshold:50,
+      is_output:false,
+      
+      input_memory:vec![0;5],
+      inputs:Vec::new(),
+
+      output_axons: Vec::new(),
+      input_axons: Vec::new(),
+      
+      tick_last_fired:0,
+      delta_t:0,
+      avg_t:0,
+  }
+  }
+}
 impl Neuron {
   /// Makes a new neuron
   pub fn new(is_output:bool, visualizable:bool) -> Self {
-    // If the brain is made to be displayed, then true, otherwise its false
     Neuron {
         // id,
         position: if visualizable {
@@ -51,20 +73,24 @@ impl Neuron {
         } else {
           Pos::zero()
         },
-        happyness:25,
-        base_threshold:50,
-        threshold:50,
         is_output,
-        
-        input_memory:vec![0,0,0,0,0],
-        inputs:Vec::new(),
-
-        output_axons: Vec::new(),
-        input_axons: Vec::new(),
-        
-        tick_last_fired:0,
-        delta_t:0,
-        avg_t:0,
+        ..Default::default()
+    }
+  }
+  pub fn new_with_time(visualizable:bool,current_tick:u128) -> Self {
+    // Allows neurons to be made post-running with correct time
+    Neuron {
+        // id,
+        position: if visualizable {
+          Pos::new(
+            rand::gen_range(0.0+20.0,screen_width()-20.0), 
+            rand::gen_range(0.0+10.0,screen_height()-10.0)
+          )
+        } else {
+          Pos::zero()
+        },
+        tick_last_fired:current_tick,
+        ..Default::default()
     }
   }
   pub fn new_with_data(
@@ -97,7 +123,7 @@ impl Neuron {
         threshold:threshold.unwrap_or(50),
         is_output: is_output.unwrap_or(false),
         
-        input_memory:input_memory.unwrap_or(vec![0,0,0,0,0]),
+        input_memory:input_memory.unwrap_or(vec![0;5]),
         inputs:inputs.unwrap_or(Vec::new()),
 
         input_axons:input_axons.unwrap_or(Vec::new()),
@@ -272,9 +298,8 @@ impl Neuron {
       let extreme_fire:bool = potential.abs() > 100;
       let u = (self.delta_t as i32) - (self.avg_t as i32);
       let w = u / ONE_STANDARD_DEV_THRESHOLD;
-      if w.abs() <= 1 {
+      if w.abs() <= 2 {
         self.happyness = self.happyness.saturating_sub(4);
-
       } else if w.abs() > 4 {
         if (w.is_negative() && self.base_threshold >= 70) || extreme_fire {
             self.happyness += w.abs() as u32;
@@ -294,9 +319,9 @@ impl Neuron {
 
   // alters actual threshold when its right after firing
   fn post_fire_threshold(&mut self) {
-    if self.delta_t >= 15 { self.set_threshold_to_normal(); }
-    if self.delta_t >= 5 { self.set_threshold_to_increment(); }
     if self.delta_t < 5 { self.set_threshold_to_recovery(); }
+    if self.delta_t >= 5 { self.set_threshold_to_increment(); }
+    if self.delta_t >= 15 { self.set_threshold_to_normal(); }
   } 
 
   // ease of reading fns
@@ -304,10 +329,10 @@ impl Neuron {
     self.threshold = self.base_threshold;
   }
   fn set_threshold_to_increment(&mut self) {
-    self.threshold = std::cmp::max(self.threshold - (3 * self.delta_t as i32 - 15),0);
+    self.threshold = std::cmp::max(self.threshold - (MIN_THRESHOLD/10 * self.delta_t as i32 - MIN_THRESHOLD/2),0);
   }
   fn set_threshold_to_recovery(&mut self) {
-    self.threshold = self.base_threshold + 30;
+    self.threshold = self.base_threshold + MIN_THRESHOLD;
   }
   
   // Base Threshold shifts
