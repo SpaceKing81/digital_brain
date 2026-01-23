@@ -221,6 +221,19 @@ impl Spirion {
 
       // Remove stuff
       for axon_id in axons_to_remove {self.remove_axon(axon_id);}
+      /*
+      minor bug here! LOOK AT ME!!!
+      Anyways, future me, Fuck you. Bug here Im too tired to fix, but basiclly from what i can tell
+      based on what I just changed and is causing the bug,
+      I changed this line below me, where it now just straight up removes the neuron
+      I believe this is bypassing an old failsafe that doesn't allow neurons connected
+      to input or outputs to die.
+      Your mission, should you choose to not to kys, is to find a good place to put that
+      check valve back in.
+      Yeah. Fuck you too.
+      Im sorry. pls forgive me. Peux-tu me pardonner?
+       */
+      todo!();
       for neuron_id in neurons_to_remove {self.remove_neuron(neuron_id);}
 
       // TODO: add sink axons
