@@ -129,6 +129,8 @@ impl Spirion {
       
       let mut axons_to_remove = Vec::new();
       let mut neurons_to_remove= Vec::new();
+      let mut neurons_wo_output:Vec<u32> = Vec::new();
+      let mut neurons_wo_input:Vec<u32> = Vec::new();
 
       // same but the first is the sink neuron, and the second is the source neurons
       let mut axons_to_add_sink: Vec<(u32, Vec<u32>)> = Vec::new();
@@ -159,6 +161,7 @@ impl Spirion {
           // or add if pos. the num_in is for inputs, num_out for outputs
           if num_in.is_negative() {
             for _ in 0..num_in.abs() {
+              if neuron.input_axons.is_empty() {neurons_wo_input.push(neuron_id);break;}
               let index = rand::gen_range(0, neuron.input_axons.len());
               let id = neuron.input_axons[index];
               axons_to_remove.push(id);
@@ -173,7 +176,7 @@ impl Spirion {
           }
           if num_out.is_negative() {
             for _ in 0..num_out.abs() {
-
+              if neuron.output_axons.is_empty() {neurons_wo_output.push(neuron_id);break;}
               let index = rand::gen_range(0, neuron.output_axons.len());
               let id = neuron.output_axons[index];
               axons_to_remove.push(id);
