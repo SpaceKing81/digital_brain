@@ -29,7 +29,7 @@ const GAME_LEVEL:f32 = 1.0;
 
 use std::clone;
 
-use macroquad::{prelude::*};
+use macroquad::{prelude::*, rand::RandGenerator};
 
 fn window_conf() -> Conf {
     Conf {
@@ -223,21 +223,22 @@ impl Snake {
 
 impl SnakeGame {
   fn new(game_size:Option<usize>, level:f32) -> Self {
-    Self { 
+    let apple = Self::apple_new(game_size);
+    let mut game = Self { 
       current_frame: Matrix::new(game_size.unwrap_or(20), 0.0), 
-      apple_gradient: Matrix::new(game_size.unwrap_or(20), 0.0), 
+      apple_gradient: Self::generate_apple_gradient(apple),
       snake: Snake::new(
         Coords { row: game_size/2, col: game_size/2 }, 
         level,
-      ), 
-      apple: Self::apple_new(game_size), 
+      ),
+      apple, 
       score: 0, 
       pixle_size: pixle_size_calculator(game_size.unwrap_or(20)),
-    }
-
-
-
-
+    };
+    
+    
+    game.current_frame.set(game.snake.head.row,game.snake.head.col, 1.0);
+    game
   }
   fn progress_frame(&mut self)  {
     todo!()
@@ -269,106 +270,7 @@ impl SnakeGame {
   fn restart_game(&mut self) {
     todo!()
   }
-  fn move_paddle(&mut self, direction:Move) {
-    if let Some(_) = self.current_frame.get(
-      0,
-      self.paddle_col + 1, 
-    ) {
-    self.current_frame.set(
-      0,
-      self.paddle_col,
-      false
-    ).unwrap_or_default();
-    self.current_frame.set(
-      0,
-      self.paddle_col + 1,
-      false
-    ).unwrap_or_default();
-  }
-    match direction {
-      Move::Down => {
-        if let Some(_) = self.current_frame.get(
-          0,
-          self.paddle_col + 2, 
-        ) {
-          // If this is a valid place on the map, then:
-          self.current_frame.set(
-            0, 
-            self.paddle_col + 1,
-            true
-          ).unwrap_or_default();
-          self.current_frame.set(
-            0, 
-            self.paddle_col + 2,
-            true
-          ).unwrap_or_default();
-          self.paddle_col += 1;
-
-        } else { 
-          self.current_frame.set(
-            0,
-            self.current_frame.cols - 1, 
-            true
-          ).unwrap_or_default(); 
-          self.current_frame.set(
-            0, 
-            self.current_frame.cols - 2, 
-            true
-          ).unwrap_or_default();
-          self.paddle_col = self.current_frame.cols - 2;                                   
-        }
-      },
-      Move::Up => {
-        if let Some(_) = self.current_frame.get(
-          0,
-          self.paddle_col.saturating_sub(1), 
-        ) {
-          // If this is a valid place on the map, then:
-          self.current_frame.set(
-            0, 
-            self.paddle_col.saturating_sub(1), 
-            true
-          ).unwrap_or_default();
-          self.current_frame.set(
-            0, 
-            self.paddle_col.saturating_sub(1) + 1,
-            true
-          ).unwrap_or_default();
-          self.paddle_col = self.paddle_col.saturating_sub(1);
-
-        } else { 
-          self.current_frame.set(
-            0,
-            0, 
-            true
-          ).unwrap_or_default(); 
-          self.current_frame.set(
-            0, 
-            1, 
-            true
-          ).unwrap_or_default();
-          self.paddle_col = 0;                                   
-        }
-      },
-      Move::None => {}
-    }
-    if let Some(_) = self.current_frame.get(
-    0,
-    self.paddle_col + 1, 
-    ) {
-      self.current_frame.set(
-        0,
-        self.paddle_col,
-        true
-      ).unwrap_or_default();
-      self.current_frame.set(
-        0,
-        self.paddle_col + 1,
-        true
-      ).unwrap_or_default();
-    }
-    todo!()
-  }
+  
   
   fn draw(&self) {
     let length = self.pixle_size;
@@ -392,33 +294,54 @@ impl SnakeGame {
     true
   }
   fn apple_new(game_size:Option<usize>) -> Coords {
-    todo!()
+    Coords { 
+      row: rand::gen_range(1, game_size.unwrap_or(20)), 
+      col: rand::gen_range(1, game_size.unwrap_or(20)),  
+    }
+  }
+  fn generate_apple_gradient(&mut self) {
+    let game_size = self.apple_gradient.rows as i32;
+    let apple_cords = self.apple;
+    let mut new = Matrix::new(game_size as usize, 0.0);
+    let intervel:f32 = 1.0/((game_size+1) as f32);
+    // POSSIBLE BUG: the weird zero indexing issue between row-col and matrix nonsense
+    for in_row in 0..game_size {
+      for in_col in 0..game_size {
+        let dis = (apple_cords.row as i32 - in_row).abs() + (apple_cords.col as i32 - in_col).abs();
+        if dis > game_size { continue; }
+        let value = intervel*dis - 1;
+        new.set(in_row as usize, in_col as usize, value);
+      }
+    }
+    self.apple_gradient = new;
+    self.fuse_apple_gradient_snake();
   }
   fn change_apple_pos(&mut self) {
     // take the current positions of the snake body, and place the apple somewhere random in the extra space
     loop {
-      let mut possible = true;
       let cord = Coords {
-        row: rand::gen_range(0, self.apple_gradient.rows),
-        col: rand::gen_range(0, self.apple_gradient.cols),
+        row: rand::gen_range(1, self.apple_gradient.rows),
+        col: rand::gen_range(1, self.apple_gradient.cols),
       };
-      if &cord == &self.apple {continue;}
-      for i in &self.snake.path {
-        if &cord == i {
-          possible = false;
-          break;
-        }
-      }
-      if possible {
-        self.apple = cord;
-        break;
-      }
+      if cord == self.apple {continue;}
+      let x = self.current_frame.get(cord.row, cord.col).unwrap_or(&1.0);
+      if x.is_sign_positive() { continue; }
+      self.apple = cord;
     }
   }
   fn check_snake_ate(&self) -> bool {
     self.apple == self.snake.head
   }
 
+  fn fuse_apple_gradient_snake(&mut self) {
+    self.current_frame = self.apple_gradient;
+    let intervel = 1.0 / self.snake.length as f32;
+    let mut iter = 1.0;
+    for i in self.snake.path {
+      self.current_frame.set(i.row, i.col, iter * intervel);
+      iter = iter + 1.0;
+    }
+  }
 
   fn pixle_to_grid(&self, pixle:f32) -> usize {
     (pixle/self.pixle_size).floor() as usize
