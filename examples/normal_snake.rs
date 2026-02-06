@@ -27,6 +27,8 @@ const GAME_LEVEL:f32 = 1.0;
 
 
 
+use std::clone;
+
 use macroquad::{prelude::*};
 
 fn window_conf() -> Conf {
@@ -111,7 +113,11 @@ matrix
   }
 
 }
-
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Copy)]
+struct Coords {
+  row:usize,
+  col:usize,
+}
 struct SnakeGame {
   current_frame:Matrix<bool>,
   snake:Snake,
@@ -120,9 +126,9 @@ struct SnakeGame {
   pixle_size:f32,
 }
 struct Snake {
-  head:Vec2,
+  head:(usize,usize),
   dir:Dir,
-  path:Vec<Vec2>,
+  path:Vec<(usize,usize)>,
   length:u32,
 }
 

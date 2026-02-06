@@ -558,17 +558,29 @@ impl Spirion {
   }
 
   fn remove_neuron(&mut self, neuron_id: u32) {
-      if let Some(neuron) = self.neurons.remove(&neuron_id) {
-          // Remove all input axons
-          self.num_of_neurons = self.num_of_neurons.saturating_sub(1);
-          for axon_id in neuron.input_axons {
-              self.remove_axon(axon_id);
-          }
-          // Remove all output axons
-          for axon_id in neuron.output_axons {
-              self.remove_axon(axon_id);
-          }
-      } else {panic!("trying to remove a non-existent neuron???")}
+    if let Some(neuron) = self.neurons.get_mut(&neuron_id) {
+      // checks to make sure its not an output neuron
+      if neuron.is_output { return; }
+      // checks to make sure it doesn't have inputs attached
+      for id in &neuron.input_axons {
+        // Why is this not recognizing the data type that is stored in the map?
+        if let Some(axon) = self.axons.get(id) {
+          if axon.is_input() { return; }
+        }
+      }
+    } else {panic!("trying to remove a non-existent neuron???")}
+
+    if let Some(neuron) = self.neurons.remove(&neuron_id) {
+        // Remove all input axons
+        self.num_of_neurons = self.num_of_neurons.saturating_sub(1);
+        for axon_id in neuron.input_axons {
+            self.remove_axon(axon_id);
+        }
+        // Remove all output axons
+        for axon_id in neuron.output_axons {
+            self.remove_axon(axon_id);
+        }
+    } else {panic!("trying to remove a non-existent neuron???")}
   }
   fn remove_axon(&mut self, axon_id: u128) {
     if let Some(axon) = self.axons.remove(&axon_id) {
