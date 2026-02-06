@@ -6,7 +6,7 @@
 /*
 
 README: Literally normal Snake. Game size can be changed to whichever size of game you
-want to play, default is a 30 x 30 grid, where None = Some(30). Pick whatever level you
+want to play, default is a 30 x 30 grid, where None = Some(20). Pick whatever level you
 want. Higher level will be harder. Game Automaticlly increases in level you fill
 the screen
 
@@ -127,7 +127,16 @@ impl Coords {
     self.row.saturating_sub(row);
     self.col.saturating_sub(col);
   }
+  fn is_any_same(&self, row:usize, col:usize) -> bool {
+    self.row == row || self.col == col
+  }
+  fn is_any_greater_than(&self, row:usize, col:usize) -> bool {
+    self.row > row || self.col > col
+  }
+  
+  const ZERO:Self = Self {row:0,col:0};
 }
+
 
 struct SnakeGame {
   current_frame:Matrix<f32>,
@@ -177,11 +186,11 @@ impl Snake {
     let dir = self.dir;
     self.path.remove(0);
     self.path.push(self.head);
-    self.head = match dir {
-      Dir::Down => {self.head.add(1,0)}
-      Dir::Right =>{self.head.add(0,1);}
-      Dir::Left =>{self.head.sub(0,1);}
-      Dir::Up =>{self.head.sub(1,0);}
+    match dir {
+      Dir::Down => {self.head.add((1,0))}
+      Dir::Right =>{self.head.add((0,1));}
+      Dir::Left =>{self.head.sub((0,1));}
+      Dir::Up =>{self.head.sub((1,0));}
       _=> panic!("Cannot have the head not have a direction")
     };
   }
@@ -189,25 +198,75 @@ impl Snake {
     self.path.push(self.head);
     self.length += 1;
   }
-  fn check_edge_collide(&mut self) {
-    /*
-    if collision, restart the game
-     */
-    todo!()
-  }
-  fn check_self_collide(&mut self) {
-    /*
-    restart game if colliding.
-     */
-    todo!()
+  fn turn(&mut self, picked_move:Dir) {
+    let current_dir = self.dir;
+    if picked_move == None {return;}
+    let (a,b) = match current_dir {
+      Dir::Down => (-1,0),
+      Dir::Up => (1,0),
+      Dir::Left => (0,-1),
+      Dir::Right => (0,1),
+      Dir::None => panic!("Cannot have no direction")
+    };
+    let (c,d) = match picked_move {
+      Dir::Down => (-1,0),
+      Dir::Up => (1,0),
+      Dir::Left => (0,-1),
+      Dir::Right => (0,1),
+      Dir::None => panic!("Literally should be impossible")
+    };
+    if (a + c == 0) && (b + d == 0) {return;}
+    if ((a + c).abs() == 2) || ((b + d).abs() == 2) {return;}
+    self.dir = picked_move;
   }
 }
 
 impl SnakeGame {
   fn new(game_size:Option<usize>, level:f32) -> Self {
-    todo!();
+    Self { 
+      current_frame: Matrix::new(game_size.unwrap_or(20), 0.0), 
+      apple_gradient: Matrix::new(game_size.unwrap_or(20), 0.0), 
+      snake: Snake::new(
+        Coords { row: game_size/2, col: game_size/2 }, 
+        level,
+      ), 
+      apple: Self::apple_new(game_size), 
+      score: 0, 
+      pixle_size: pixle_size_calculator(game_size.unwrap_or(20)),
+    }
+
+
+
+
   }
   fn progress_frame(&mut self)  {
+    todo!()
+  }
+  fn check_edge_collide(&mut self, game_size:usize) {
+    // If too far out
+    if self.snake.head.is_any_greater_than(game_size, game_size) {
+      self.restart_game();
+      return;
+    }
+    // If too far in
+    if Some(&self.snake.head) == self.snake.path.last() 
+    && self.snake.head.is_any_same(0, 0) 
+    {
+      self.restart_game();
+      return;
+    }
+    
+    todo!()
+  }
+  fn check_self_collide(&mut self) {
+    for i in &self.snake.path {
+      if i == &self.snake.head {
+        self.restart_game();
+        break;
+      }
+    }
+  }
+  fn restart_game(&mut self) {
     todo!()
   }
   fn move_paddle(&mut self, direction:Move) {
@@ -327,18 +386,34 @@ impl SnakeGame {
   }
 
   fn snake_ate_apple(&mut self) -> bool {
-    /*
-    1) make the snake longer by adding the current head pos to the vec wo removing one
-    2) change apple pos
-    3) increase snake length value
-     */
+    if !self.check_snake_ate() {return false;}
+    self.snake.ate();
+    self.change_apple_pos();
+    true
+  }
+  fn apple_new(game_size:Option<usize>) -> Coords {
     todo!()
   }
   fn change_apple_pos(&mut self) {
-    /*
-    take the current positions of the snake body, and place the apple somewhere random in the extra space
-     */
-    todo!()
+    // take the current positions of the snake body, and place the apple somewhere random in the extra space
+    loop {
+      let mut possible = true;
+      let cord = Coords {
+        row: rand::gen_range(0, self.apple_gradient.rows),
+        col: rand::gen_range(0, self.apple_gradient.cols),
+      };
+      if &cord == &self.apple {continue;}
+      for i in &self.snake.path {
+        if &cord == i {
+          possible = false;
+          break;
+        }
+      }
+      if possible {
+        self.apple = cord;
+        break;
+      }
+    }
   }
   fn check_snake_ate(&self) -> bool {
     self.apple == self.snake.head
