@@ -29,7 +29,7 @@ const GAME_LEVEL:f32 = 1.0;
 
 use std::clone;
 
-use macroquad::{prelude::*, rand::RandGenerator};
+use macroquad::{prelude::{collections::storage::get, *}, rand::RandGenerator};
 
 fn window_conf() -> Conf {
     Conf {
@@ -42,8 +42,7 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
   println!("Starting simulation...");
-  let mut game = SnakeGame::new(GAME_SIZE, GAME_LEVEL);
-
+  let mut game = SnakeGame::new(GAME_SIZE);
   // Main loop
   loop {
     // Handle Ending
@@ -56,11 +55,11 @@ async fn main() {
     
     // Clear the screen
     clear_background(BLACK);
-
-    game.progress_frame();
+    
+    game.progress_frame(get_move());
     // Draw Game
     game.draw();
-    if game.score >= GAME_SIZE.unwrap_or(30)*GAME_SIZE.unwrap_or(30) {game.level_up();}
+    if game.score >= GAME_SIZE.unwrap_or(20)*GAME_SIZE.unwrap_or(20) {game.level_up();}
     // Draw FPS and other info
     draw_text(
       &format!("Score: {}", game.score),
@@ -74,7 +73,7 @@ async fn main() {
     next_frame().await;
   }
 }
-
+#[derive(Clone)]
 struct Matrix<T> {
   data:Vec<T>, // either white or black
   cols:usize,
@@ -134,9 +133,7 @@ impl Coords {
     self.row > row || self.col > col
   }
   
-  const ZERO:Self = Self {row:0,col:0};
 }
-
 
 struct SnakeGame {
   current_frame:Matrix<f32>,
@@ -145,6 +142,7 @@ struct SnakeGame {
   apple:Coords,
   
   score:usize,
+  tick:usize,
   pixle_size:f32,
 }
 struct Snake {
@@ -153,8 +151,6 @@ struct Snake {
   path:Vec<Coords>,
   length:u32,
 }
-
-
 
 #[derive(Clone, Copy)]
 enum Dir {
@@ -167,7 +163,7 @@ enum Dir {
 
 
 impl Snake {
-  fn new(center:Coords, level:f32) -> Self {
+  fn new(center:Coords) -> Self {
     // let x = rand::gen_range(-1.0, 1.0);
     // let dir = if x.is_sign_positive() {
     //   Dir::Up
@@ -186,6 +182,7 @@ impl Snake {
     let dir = self.dir;
     self.path.remove(0);
     self.path.push(self.head);
+    dbg!(&self.path);
     match dir {
       Dir::Down => {self.head.add((1,0))}
       Dir::Right =>{self.head.add((0,1));}
@@ -200,20 +197,19 @@ impl Snake {
   }
   fn turn(&mut self, picked_move:Dir) {
     let current_dir = self.dir;
-    if picked_move == None {return;}
-    let (a,b) = match current_dir {
+    let (a, b):(i32, i32) = match current_dir {
       Dir::Down => (-1,0),
       Dir::Up => (1,0),
       Dir::Left => (0,-1),
       Dir::Right => (0,1),
       Dir::None => panic!("Cannot have no direction")
     };
-    let (c,d) = match picked_move {
+    let (c,d):(i32, i32) = match picked_move {
       Dir::Down => (-1,0),
       Dir::Up => (1,0),
       Dir::Left => (0,-1),
       Dir::Right => (0,1),
-      Dir::None => panic!("Literally should be impossible")
+      Dir::None => return,
     };
     if (a + c == 0) && (b + d == 0) {return;}
     if ((a + c).abs() == 2) || ((b + d).abs() == 2) {return;}
@@ -222,30 +218,49 @@ impl Snake {
 }
 
 impl SnakeGame {
-  fn new(game_size:Option<usize>, level:f32) -> Self {
+  fn new(game_size:Option<usize>) -> Self {
     let apple = Self::apple_new(game_size);
+    let game_size = game_size.unwrap_or(20);
     let mut game = Self { 
-      current_frame: Matrix::new(game_size.unwrap_or(20), 0.0), 
-      apple_gradient: Self::generate_apple_gradient(apple),
+      current_frame: Matrix::new(game_size, 0.0), 
+      apple_gradient: Matrix::new(game_size, 0.0),
       snake: Snake::new(
-        Coords { row: game_size/2, col: game_size/2 }, 
-        level,
+        Coords { 
+          row: game_size/2, 
+          col: game_size/2,
+        },
       ),
       apple, 
       score: 0, 
-      pixle_size: pixle_size_calculator(game_size.unwrap_or(20)),
+      pixle_size: pixle_size_calculator(game_size),
+      tick:0,
     };
-    
-    
-    game.current_frame.set(game.snake.head.row,game.snake.head.col, 1.0);
+    game.generate_apple_gradient();
+    game.fuse_apple_gradient_snake();
     game
   }
-  fn progress_frame(&mut self)  {
-    todo!()
+  fn progress_frame(&mut self, turn_dir:Dir)  {
+    self.snake.turn(turn_dir);
+    if self.tick >= 5 - self.score {
+      self.snake.forward();
+      self.tick = 0;
+    }
+    self.tick += 1;
+    if self.snake_ate_apple() {
+      dbg!("point3");
+      self.generate_apple_gradient();
+    }
+    
+    self.check_self_collide();
+    self.check_edge_collide();
+    
+    self.fuse_apple_gradient_snake();
   }
-  fn check_edge_collide(&mut self, game_size:usize) {
+  fn check_edge_collide(&mut self) {
+    let game_size = self.current_frame.cols;
     // If too far out
     if self.snake.head.is_any_greater_than(game_size, game_size) {
+      dbg!("edge collide1");
       self.restart_game();
       return;
     }
@@ -253,38 +268,45 @@ impl SnakeGame {
     if Some(&self.snake.head) == self.snake.path.last() 
     && self.snake.head.is_any_same(0, 0) 
     {
+      dbg!("edge collide2");
       self.restart_game();
       return;
     }
-    
-    todo!()
   }
   fn check_self_collide(&mut self) {
     for i in &self.snake.path {
-      if i == &self.snake.head {
+      if i == &self.snake.head && self.tick == 1{
+        dbg!("self collide");
         self.restart_game();
         break;
       }
     }
   }
   fn restart_game(&mut self) {
-    todo!()
+    self.current_frame = Matrix::new(self.apple_gradient.rows, 0.0);
+    self.generate_apple_gradient();
+    let center = Coords {
+      row:self.current_frame.rows/2, 
+      col:self.current_frame.cols/2
+    };
+    self.snake = Snake::new(center)
   }
-  
   
   fn draw(&self) {
     let length = self.pixle_size;
-    for xcell in 0..self.current_frame.rows {
-      for ycell in 0..self.current_frame.cols {
-        if let Some(value) = self.current_frame.get(xcell, ycell) {
-          let color = if *state > 0 {
-            WHITE
-          } else {
-            // needs a color fn that makes a color red->black based on the apple gradient
-            todo!()
-          };
-          draw_rectangle((xcell as f32) * length, (ycell as f32) * length, length, length, color);
-        }}}
+    // let mut cell = 0;
+    for col in 0..self.current_frame.cols {
+      for row in 0..self.current_frame.rows {
+        let cell = *self.current_frame.get(row, col).unwrap();
+        if cell == 0.0 {continue;}
+        if cell.is_sign_positive() {
+          draw_rectangle((col as f32) * length, (row as f32) * length, length, length, WHITE);  
+          continue;
+        }
+        let color = Color::new(cell.abs(), 0.0, 0.0, 0.5);
+        draw_rectangle((col as f32) * length, (row as f32) * length, length, length, color);
+      }
+    }
   }
 
   fn snake_ate_apple(&mut self) -> bool {
@@ -309,7 +331,7 @@ impl SnakeGame {
       for in_col in 0..game_size {
         let dis = (apple_cords.row as i32 - in_row).abs() + (apple_cords.col as i32 - in_col).abs();
         if dis > game_size { continue; }
-        let value = intervel*dis - 1;
+        let value = intervel * (dis as f32) - 1.0;
         new.set(in_row as usize, in_col as usize, value);
       }
     }
@@ -334,10 +356,10 @@ impl SnakeGame {
   }
 
   fn fuse_apple_gradient_snake(&mut self) {
-    self.current_frame = self.apple_gradient;
+    self.current_frame = self.apple_gradient.clone();
     let intervel = 1.0 / self.snake.length as f32;
     let mut iter = 1.0;
-    for i in self.snake.path {
+    for i in &self.snake.path {
       self.current_frame.set(i.row, i.col, iter * intervel);
       iter = iter + 1.0;
     }
@@ -347,7 +369,8 @@ impl SnakeGame {
     (pixle/self.pixle_size).floor() as usize
   }
   fn level_up(&mut self) {
-    todo!()
+    self.score += 1;
+    self.restart_game();
   }
 }
 
@@ -359,19 +382,18 @@ fn pixle_size_calculator(game_size:usize) -> f32 {
   } else { panic!("Chosen game size is too large") }
 }
 fn get_move() -> Dir {
-  if is_key_released(KeyCode::Down) {
+  if is_key_pressed(KeyCode::Down) {
     return Dir::Down;
   }
-  if is_key_released(KeyCode::Up) {
+  if is_key_pressed(KeyCode::Up) {
     return Dir::Up;
   }
-  if is_key_released(KeyCode::Left) {
+  if is_key_pressed(KeyCode::Left) {
     return Dir::Left;
   }
-  if is_key_released(KeyCode::Right) {
+  if is_key_pressed(KeyCode::Right) {
     return Dir::Right;
   }
-
   Dir::None
 }
 
