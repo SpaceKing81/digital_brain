@@ -123,8 +123,18 @@ impl Coords {
     self.col += col;
   }
   fn sub(&mut self, (row,col):(usize,usize)) {
-    self.row.saturating_sub(row);
-    self.col.saturating_sub(col);
+    if self.row <= row {
+      self.row = 0
+    }
+    if self.col <= col {
+      self.col = 0
+    }
+    if self.row > row {
+      self.row = self.row - row;
+    }
+    if self.col > col {
+      self.col = self.col - col;
+    }
   }
   fn is_any_same(&self, row:usize, col:usize) -> bool {
     self.row == row || self.col == col
@@ -132,7 +142,7 @@ impl Coords {
   fn is_any_greater_than(&self, row:usize, col:usize) -> bool {
     self.row > row || self.col > col
   }
-  
+  const ZERO:Coords = Coords {row:0, col:0};
 }
 
 struct SnakeGame {
@@ -149,7 +159,7 @@ struct Snake {
   head:Coords,
   dir:Dir,
   path:Vec<Coords>,
-  length:u32,
+  length:usize,
 }
 
 #[derive(Clone, Copy)]
@@ -161,28 +171,28 @@ enum Dir {
   None,
 }
 
-
 impl Snake {
   fn new(center:Coords) -> Self {
-    // let x = rand::gen_range(-1.0, 1.0);
-    // let dir = if x.is_sign_positive() {
-    //   Dir::Up
-    // } else {
-    //   Dir::Down
-    // };
-    let dir = Dir::Up;
+    let x:f32 = rand::gen_range(-1.0, 1.0);
+    let dir = if x == x.abs() {
+      Dir::Up
+    } else {
+      Dir::Down
+    };
     Self {
       dir,
       head:center,
-      path:vec![center],
+      path:vec![Coords::ZERO],
       length:1,
     }
   }
-  fn forward(&mut self) {
+  fn forward(&mut self, eaten:bool) {
     let dir = self.dir;
-    self.path.remove(0);
+    if eaten {
+      dbg!("AHHHHHHHHHH");
+      self.path.remove(0);
+    }
     self.path.push(self.head);
-    dbg!(&self.path);
     match dir {
       Dir::Down => {self.head.add((1,0))}
       Dir::Right =>{self.head.add((0,1));}
@@ -192,7 +202,6 @@ impl Snake {
     };
   }
   fn ate(&mut self) {
-    self.path.push(self.head);
     self.length += 1;
   }
   fn turn(&mut self, picked_move:Dir) {
@@ -242,15 +251,14 @@ impl SnakeGame {
   fn progress_frame(&mut self, turn_dir:Dir)  {
     self.snake.turn(turn_dir);
     if self.tick >= 5 - self.score {
-      self.snake.forward();
+      dbg!(self.check_snake_ate());
+      self.snake.forward(self.check_snake_ate());
       self.tick = 0;
     }
     self.tick += 1;
     if self.snake_ate_apple() {
-      dbg!("point3");
       self.generate_apple_gradient();
     }
-    
     self.check_self_collide();
     self.check_edge_collide();
     
@@ -260,7 +268,6 @@ impl SnakeGame {
     let game_size = self.current_frame.cols;
     // If too far out
     if self.snake.head.is_any_greater_than(game_size, game_size) {
-      dbg!("edge collide1");
       self.restart_game();
       return;
     }
@@ -268,15 +275,13 @@ impl SnakeGame {
     if Some(&self.snake.head) == self.snake.path.last() 
     && self.snake.head.is_any_same(0, 0) 
     {
-      dbg!("edge collide2");
       self.restart_game();
       return;
     }
   }
   fn check_self_collide(&mut self) {
-    for i in &self.snake.path {
-      if i == &self.snake.head && self.tick == 1{
-        dbg!("self collide");
+    for i in 0..self.snake.length {
+      if self.snake.path.get(i) == Some(&self.snake.head) && self.tick == 1 {
         self.restart_game();
         break;
       }
@@ -294,18 +299,9 @@ impl SnakeGame {
   
   fn draw(&self) {
     let length = self.pixle_size;
-    // let mut cell = 0;
-    for col in 0..self.current_frame.cols {
-      for row in 0..self.current_frame.rows {
-        let cell = *self.current_frame.get(row, col).unwrap();
-        if cell == 0.0 {continue;}
-        if cell.is_sign_positive() {
-          draw_rectangle((col as f32) * length, (row as f32) * length, length, length, WHITE);  
-          continue;
-        }
-        let color = Color::new(cell.abs(), 0.0, 0.0, 0.5);
-        draw_rectangle((col as f32) * length, (row as f32) * length, length, length, color);
-      }
+    draw_rectangle((self.apple.col as f32) * length, (self.apple.row as f32) * length, length, length, RED);
+    for i in &self.snake.path {
+      draw_rectangle((i.col as f32) * length, (i.row as f32) * length, length, length, WHITE);
     }
   }
 
@@ -346,9 +342,10 @@ impl SnakeGame {
         col: rand::gen_range(1, self.apple_gradient.cols),
       };
       if cord == self.apple {continue;}
-      let x = self.current_frame.get(cord.row, cord.col).unwrap_or(&1.0);
-      if x.is_sign_positive() { continue; }
+      let &x = self.current_frame.get(cord.row, cord.col).unwrap_or(&1.0);
+      if x == x.abs() { continue; }
       self.apple = cord;
+      break;
     }
   }
   fn check_snake_ate(&self) -> bool {
@@ -396,5 +393,3 @@ fn get_move() -> Dir {
   }
   Dir::None
 }
-
-
