@@ -302,23 +302,29 @@ impl SnakeGame {
   
   fn draw(&self) {
     let length = self.pixle_size;
-    draw_rectangle((self.current_frame.cols as f32 * length), (self.current_frame.rows as f32 * length), 0.0, 0.0, Color{r:0.02,g:0.02,b:0.1,a:1.0});
-    draw_rectangle((self.apple.col as f32) * length, (self.apple.row as f32) * length, length, length, RED);
-    let mut color:Color = BLACK;
-   
-    for row in 0..GAME_SIZE.unwrap_or(20); {
-      for col in 0..GAME_SIZE.unwrap_or(20); {
-        if (row,col) == self.apple {
-          
+    for row in 0..GAME_SIZE.unwrap_or(20) {
+      for col in 0..GAME_SIZE.unwrap_or(20) {
+        let mut color:Color = Color{r:0.02,g:0.02,b:0.1,a:1.0};
+        let spot = Coords {
+          row,
+          col,
+        };
+        if spot == self.apple {
+          color = RED;
         }
-        if (row,col) == self.
+        for i in &self.snake.path {
+          if &spot == i {
+            color = WHITE;
+            break;
+          }
+        }
+        draw_rectangle((col as f32) * length, (row as f32) * length, length, length, color);
       }
-      draw_rectangle((i.col as f32) * length, (i.row as f32) * length, length, length, WHITE)
     }
 
-    for i in &self.snake.path {
-      draw_rectangle((i.col as f32) * length, (i.row as f32) * length, length, length, WHITE);
-    }
+    // for i in &self.snake.path {
+    //   draw_rectangle((i.col as f32) * length, (i.row as f32) * length, length, length, WHITE);
+    // }
   }
 
   fn snake_ate_apple(&mut self) -> bool {
