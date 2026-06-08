@@ -62,12 +62,14 @@ async fn main() {
     if game.score >= GAME_SIZE.unwrap_or(20)*GAME_SIZE.unwrap_or(20) {game.level_up();}
     // Draw FPS and other info
     draw_text(
-      &format!("Score: {}", game.score),
+      &format!("Score: {}", game.snake.length),
       20.,
       20.,
       20.,
       WHITE,
     );
+
+    game.check_collide();
     }
     // Render the frame
     next_frame().await;
@@ -182,17 +184,16 @@ impl Snake {
     Self {
       dir,
       head:center,
-      path:vec![Coords::ZERO],
+      path:Vec::new(),
       length:1,
     }
   }
   fn forward(&mut self, eaten:bool) {
     let dir = self.dir;
-    if eaten {
-      dbg!("AHHHHHHHHHH");
+    self.path.push(self.head);
+    if !eaten && self.path.len() > self.length {
       self.path.remove(0);
     }
-    self.path.push(self.head);
     match dir {
       Dir::Down => {self.head.add((1,0))}
       Dir::Right =>{self.head.add((0,1));}
@@ -250,19 +251,20 @@ impl SnakeGame {
   }
   fn progress_frame(&mut self, turn_dir:Dir)  {
     self.snake.turn(turn_dir);
-    if self.tick >= 5 - self.score {
-      dbg!(self.check_snake_ate());
+    if self.tick >= (7 - self.score) {
       self.snake.forward(self.check_snake_ate());
       self.tick = 0;
     }
     self.tick += 1;
+    
     if self.snake_ate_apple() {
       self.generate_apple_gradient();
     }
+    self.fuse_apple_gradient_snake();
+  }
+  fn check_collide(&mut self) {
     self.check_self_collide();
     self.check_edge_collide();
-    
-    self.fuse_apple_gradient_snake();
   }
   fn check_edge_collide(&mut self) {
     let game_size = self.current_frame.cols;
@@ -280,7 +282,8 @@ impl SnakeGame {
     }
   }
   fn check_self_collide(&mut self) {
-    for i in 0..self.snake.length {
+    let length = self.snake.path.len();
+    for i in 0..length {
       if self.snake.path.get(i) == Some(&self.snake.head) && self.tick == 1 {
         self.restart_game();
         break;
@@ -299,7 +302,20 @@ impl SnakeGame {
   
   fn draw(&self) {
     let length = self.pixle_size;
+    draw_rectangle((self.current_frame.cols as f32 * length), (self.current_frame.rows as f32 * length), 0.0, 0.0, Color{r:0.02,g:0.02,b:0.1,a:1.0});
     draw_rectangle((self.apple.col as f32) * length, (self.apple.row as f32) * length, length, length, RED);
+    let mut color:Color = BLACK;
+   
+    for row in 0..GAME_SIZE.unwrap_or(20); {
+      for col in 0..GAME_SIZE.unwrap_or(20); {
+        if (row,col) == self.apple {
+          
+        }
+        if (row,col) == self.
+      }
+      draw_rectangle((i.col as f32) * length, (i.row as f32) * length, length, length, WHITE)
+    }
+
     for i in &self.snake.path {
       draw_rectangle((i.col as f32) * length, (i.row as f32) * length, length, length, WHITE);
     }
