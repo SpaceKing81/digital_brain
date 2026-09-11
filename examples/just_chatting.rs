@@ -100,7 +100,7 @@ async fn main() {
     let user_name = "User";
 
     // Initialize the brain
-    let mut input = "1";
+    let mut input = "0";
 
     let (   
         mut brain, 

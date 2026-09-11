@@ -232,6 +232,8 @@ impl Spirion {
       check valve back in.
       Yeah. Fuck you too.
       Im sorry. pls forgive me. Peux-tu me pardonner?
+
+      in fact not the bug. So...fun. Good luck future me.
        */
       todo!();
       for neuron_id in neurons_to_remove {self.remove_neuron(neuron_id);}

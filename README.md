@@ -9,18 +9,26 @@ Only now got around to actually making it a repository, because it was feeling m
 
 And now, much later, can confidently say that work here has vastly prepared me for my Ants project as well, so thats wonderful!
 
+----------
+
 How to use:
 (Techinically its a library, so eventually I'll get this into crates.io when its not abhorent.)
 
 Download the nessisary files, import {use digital_brain::Spirion;}
 Make use of the various tools avaible. Right now there are not a lot.
 
+
+
+
 Can run example files as well, currently there are 2 (Technically)
 Run in terminal:
   - cargo run --example just_chatting
   - cargo run --example pong
-  - cargo run --example normal_pong
+  - cargo run --example normal_pong (human play)
+  - cargo run --example normal_snake (human play)
 
+
+-----
 
 Checkpoints Complete:
 - Checkpoint 1
