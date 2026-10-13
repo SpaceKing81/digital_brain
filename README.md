@@ -14,7 +14,7 @@ And now, much later, can confidently say that work here has vastly prepared me f
 How to use:
 (Techinically its a library, so eventually I'll get this into crates.io when its not abhorent.)
 
-Download the nessisary files, import {use digital_brain::Spirion;}
+Download the necessary files, import {use digital_brain::Spirion;}
 Make use of the various tools avaible. Right now there are not a lot.
 
 
@@ -30,16 +30,28 @@ Run in terminal:
 
 -----
 
+Some samples of the examples:
+
+<img width="1511" height="964" alt="Screenshot_just_chatting" src="https://github.com/user-attachments/assets/7b2aff7a-156a-45db-89fe-80f08ea4ec10" />
+
+<img width="797" height="595" alt="Screenshot_pong" src="https://github.com/user-attachments/assets/2386278b-d8d3-45a3-a16a-62b17cefaedc" />
+
+
+
+-----
+
+
 Checkpoints Complete:
 - Checkpoint 1
 
 
 Goals before next checkpoint (2):
-- Refine current connection alterations, add building connections as well as breaking unwanted connections
+- Refine current connection alterations, add building connections as well as breaking unwanted connections -> Started progress, some elusive bugs are crawling around now. 
+  - Thinking of reworking neurons to include neuropeptide signaling. Would need spacial organization-esk thing to allow action over a local region. Maybe something that functions similar? Traverse signal a couple connections up and down stream? Would be costly.
 - Streamline input-data convertions (ie camera vs microphone or swap to a pressure sensor) and data - outputs convertions (ie motor, actuator, button, video game, pnumatic pump)
-- Optimize current tick function to run faster and more efficently
-- Current rendering iteration is cool, but super cluncky. Switch it so that it only renders active neurons prob, I have this cool idea about fading the further connections into blackness or smth.
-- New test case: Snake game. Seems like a fun idea, so who knows.
+- Optimize current tick function to run faster and more efficently -> mostly done?
+- Current rendering iteration is cool, but super cluncky. Switch it so that it only renders active neurons prob, I have this cool idea about fading the further connections into blackness or smth. -> Done-ish
+- New test case: Snake game. Seems like a fun idea, so who knows. -> Human-play done, just need to integrate spirion
 
 
  Next Checkpoint: Save options. Spinning up a new brain brings with it complete randomness and is dumber then the dumbest animal. Jellyfish? The ability to save the current state of the neurons and then spin up a brain using saved data (.bin probably). This allows continuity, and so that everytime its shut down, it can be paused and played rather then killed and reborn.
