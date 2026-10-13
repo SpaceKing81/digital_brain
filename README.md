@@ -32,9 +32,15 @@ Run in terminal:
 
 Some samples of the examples:
 
+
+
 <img width="1511" height="964" alt="Screenshot_just_chatting" src="https://github.com/user-attachments/assets/7b2aff7a-156a-45db-89fe-80f08ea4ec10" />
 
+*\Spirion - Just Chatting example. Visual simulation of neuron-graph with neuron as yellow nodes, axons as green/red lines, and blue as the output nodes which correspond to individual keys. Can type user input (top right) and can receive the response from Spirion (top left). \*
+
 <img width="797" height="595" alt="Screenshot_pong" src="https://github.com/user-attachments/assets/2386278b-d8d3-45a3-a16a-62b17cefaedc" />
+
+*\Spirion - Pong example. Spirion playing pong (really badly). Input corresponds to the entire tile layout (white = +1, black = -1), output corresponds to Up or Down to move the paddle. Score (top right). Losing a point causes 'pain' to alter function, and gaining a point causes 'pleasure' to deepen function. \*
 
 
 
